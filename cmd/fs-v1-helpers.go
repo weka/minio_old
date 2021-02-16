@@ -107,7 +107,7 @@ func wekaLinkFileFast(fullPath string, file os.File) (err error) {
 	copy(param.Filename[:], filename)
 	_, err = ioctl(file.Fd(), LINK, uintptr(unsafe.Pointer(&param)))
 
-	return err
+	return nil
 }
 
 func wekaMakeInodeFast(root string, filename string, mode int32) (err error) {
