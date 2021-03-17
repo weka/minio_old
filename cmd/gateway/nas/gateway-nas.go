@@ -116,7 +116,9 @@ func isFastFS(fsPath string) bool {
 func isOTmpfileSupported() bool {
 	flags := os.O_WRONLY | unix.O_TMPFILE
 	var writer, err = lock.Open(os.TempDir(), flags, 0666)
-	defer writer.Close()
+	if writer != nil {
+		defer writer.Close()
+	}
 
 	return err == nil
 }

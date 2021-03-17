@@ -45,7 +45,7 @@ import (
 
 const (
 	dataCrawlSleepPerFolder  = time.Millisecond // Time to wait between folders.
-	dataCrawlStartDelay      = 5 * time.Minute  // Time to wait on startup and between cycles.
+	dataCrawlStartDelay      = 5 * time.Second  // Time to wait on startup and between cycles.
 	dataUsageUpdateDirCycles = 16               // Visit all folders every n cycles.
 
 	healDeleteDangling    = true
@@ -102,12 +102,14 @@ func runDataCrawler(ctx context.Context, objAPI ObjectLayer) {
 
 	crawlTimer := time.NewTimer(dataCrawlStartDelay)
 	defer crawlTimer.Stop()
-
+	counter := 1
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-crawlTimer.C:
+			// TODO: LOOP START
+			logger.Info("[%s] starting ILM cycle: %d", time.Now().Format(time.RFC3339Nano), counter)
 			// Reset the timer for next cycle.
 			crawlTimer.Reset(dataCrawlStartDelay)
 
@@ -139,6 +141,10 @@ func runDataCrawler(ctx context.Context, objAPI ObjectLayer) {
 					logger.LogIf(ctx, err)
 				}
 			}
+
+			logger.Info("[%s] ending ILM cycle: %d", time.Now().Format(time.RFC3339Nano), counter)
+			// TODO: LOOP END
+			counter++
 		}
 	}
 }

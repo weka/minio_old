@@ -18,6 +18,7 @@ package lifecycle
 
 import (
 	"encoding/xml"
+	"github.com/minio/minio/cmd/logger"
 	"io"
 	"strings"
 	"time"
@@ -201,6 +202,7 @@ func (lc Lifecycle) FilterActionableRules(obj ObjectOpts) []Rule {
 			rules = append(rules, rule)
 		}
 	}
+	logger.Info("Rules: ", rune(len(rules)))
 	return rules
 }
 
@@ -228,7 +230,9 @@ func (lc Lifecycle) ComputeAction(obj ObjectOpts) Action {
 		return action
 	}
 
+
 	for _, rule := range lc.FilterActionableRules(obj) {
+		logger.Info(obj.Name, ": ", rule.Expiration.Date.Time.String())
 		if obj.DeleteMarker && obj.NumVersions == 1 && rule.Expiration.DeleteMarker.val {
 			// Indicates whether MinIO will remove a delete marker with no noncurrent versions.
 			// Only latest marker is removed. If set to true, the delete marker will be expired;
