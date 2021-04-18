@@ -19,7 +19,9 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"golang.org/x/sys/unix"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -1652,4 +1654,32 @@ func (fs *FSObjects) Health(ctx context.Context, opts HealthOptions) HealthResul
 	return HealthResult{
 		Healthy: newObjectLayerFn() != nil,
 	}
+}
+
+func CheckIsFastFS(fsPath string) {
+	GlobalIsFastFS = true // set to true so ioctl won't fail immediately
+	if err := WekaDeleteFileFast(fsPath, ".fastfs.test"); err != nil {
+		if errors.Is(err, unix.ENOTTY) || errors.Is(err, unix.ENOTSUP) {
+			GlobalIsFastFS = false
+		}
+	}
+}
+
+func CheckIsOTmpfileSupported(fsPath string) {
+	if !GlobalIsFastFS {
+		GlobalFSOTmpfile = false
+		return
+	}
+
+	flags := os.O_WRONLY | unix.O_TMPFILE
+	var writer, err = lock.Open(fsPath, flags, 0666)
+	defer writer.Close()
+
+	GlobalFSOTmpfile = err == nil
+
+}
+
+func CheckFeatureSupport(fsPath string) {
+	CheckIsFastFS(fsPath)
+	CheckIsOTmpfileSupported(fsPath)
 }
