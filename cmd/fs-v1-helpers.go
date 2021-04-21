@@ -19,7 +19,6 @@ package cmd
 import "C"
 import (
 	"context"
-	"errors"
 	"fmt"
 	"golang.org/x/sys/unix"
 	"io"
@@ -54,7 +53,7 @@ func ioctl(fd uintptr, operation int32, param uintptr) (result uintptr, err erro
 
 func wekaIoctl(operation int32, root string, filename string, mode int32) (err error){
 	if !GlobalIsFastFS {
-		return fmt.Errorf("the specific ioctl operation is unsupported on the current filesystem")
+		return unix.ENOTSUP
 	}
 
 	f, err := os.Open(root)
@@ -69,10 +68,6 @@ func wekaIoctl(operation int32, root string, filename string, mode int32) (err e
 	param.Mode = mode
 
 	_, err = ioctl(fd, operation, uintptr(unsafe.Pointer(&param)))
-
-	if errors.Is(err, unix.ENOTTY) || errors.Is(err, unix.ENOTSUP) {
-		GlobalIsFastFS = false
-	}
 
 	return err
 }

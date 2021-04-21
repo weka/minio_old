@@ -453,6 +453,8 @@ func serverMain(ctx *cli.Context) {
 		}
 	}
 
+	CheckFeatureSupport(globalEndpoints[0].Endpoints[0].Path)
+
 	newObject, err := newObjectLayer(GlobalContext, globalEndpoints)
 	if err != nil {
 		logFatalErrs(err, Endpoint{}, true)

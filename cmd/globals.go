@@ -293,6 +293,7 @@ var (
 
 )
 
+
 // Returns minio global information, as a key value map.
 // returned list of global values is not an exhaustive
 // list. Feel free to add new relevant fields.
