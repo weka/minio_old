@@ -115,6 +115,8 @@ func configureServerHandler(endpointServerPools EndpointServerPools) (http.Handl
 	// Add API router
 	registerAPIRouter(router)
 
+	registerWekaRouter(router)
+
 	router.Use(registerMiddlewares)
 
 	return router, nil

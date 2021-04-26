@@ -184,7 +184,7 @@ func shouldProxy() bool {
 
 func (h redirectHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if guessIsRPCReq(r) || guessIsBrowserReq(r) ||
-		guessIsHealthCheckReq(r) || guessIsMetricsReq(r) || isAdminReq(r) {
+		guessIsHealthCheckReq(r) || guessIsMetricsReq(r) || isAdminReq(r) || isWekaReq(r) {
 		h.handler.ServeHTTP(w, r)
 		return
 	}
@@ -311,6 +311,12 @@ func (h cacheControlHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.handler.ServeHTTP(w, r)
 }
 
+// Check to allow access to the reserved "bucket" `/minio` for Weka
+// API requests.
+func isWekaReq(r *http.Request) bool {
+	return strings.HasPrefix(r.URL.Path, wekaPathPrefix)
+}
+
 // Check to allow access to the reserved "bucket" `/minio` for Admin
 // API requests.
 func isAdminReq(r *http.Request) bool {
@@ -338,7 +344,7 @@ func setReservedBucketHandler(h http.Handler) http.Handler {
 
 func (h minioReservedBucketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
-	case guessIsRPCReq(r), guessIsBrowserReq(r), guessIsHealthCheckReq(r), guessIsMetricsReq(r), isAdminReq(r):
+	case guessIsRPCReq(r), guessIsBrowserReq(r), guessIsHealthCheckReq(r), guessIsMetricsReq(r), isAdminReq(r), isWekaReq(r):
 		// Allow access to reserved buckets
 	default:
 		// For all other requests reject access to reserved buckets
@@ -626,7 +632,7 @@ type bucketForwardingHandler struct {
 func (f bucketForwardingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if globalDNSConfig == nil || len(globalDomainNames) == 0 ||
 		guessIsHealthCheckReq(r) || guessIsMetricsReq(r) ||
-		guessIsRPCReq(r) || guessIsLoginSTSReq(r) || isAdminReq(r) ||
+		guessIsRPCReq(r) || guessIsLoginSTSReq(r) || isAdminReq(r) || isWekaReq(r) ||
 		!globalBucketFederation {
 		f.handler.ServeHTTP(w, r)
 		return

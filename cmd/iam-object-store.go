@@ -405,6 +405,7 @@ func (iamOS *IAMObjectStore) loadMappedPolicies(ctx context.Context, userType IA
 // Refresh IAMSys. If an object layer is passed in use that, otherwise
 // load from global.
 func (iamOS *IAMObjectStore) loadAll(ctx context.Context, sys *IAMSys) error {
+	logger.Info("HELLO!!! YAY IAM LOAD ALL WOOHOOO")
 	iamUsersMap := make(map[string]auth.Credentials)
 	iamGroupsMap := make(map[string]GroupInfo)
 	iamUserPolicyMap := make(map[string]MappedPolicy)
