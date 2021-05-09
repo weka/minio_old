@@ -357,14 +357,6 @@ func (fs *FSObjects) PutObjectPart(ctx context.Context, bucket, object, uploadID
 	// Make sure not to create parent directories if they don't exist - the upload might have been aborted.
 	partPath := pathJoin(uploadIDDir, fs.encodePartFile(partID, etag, data.ActualSize()))
 
-	// Make sure not to create parent directories if they don't exist - the upload might have been aborted.
-	if err = fsSimpleRenameFile(ctx, tmpPartPath, partPath); err != nil {
-		if err == errFileNotFound || err == errFileAccessDenied {
-			return pi, InvalidUploadID{Bucket: bucket, Object: object, UploadID: uploadID}
-		}
-		return pi, toObjectErr(err, minioMetaMultipartBucket, partPath)
-	}
-
 	if GlobalFSOTmpfile {
 		filename := fmt.Sprintf("/proc/self/fd/%d", file.Fd())
 		err = fsLinkat(ctx, AT_FDCWD, filename, AT_FDCWD, partPath, AT_SYMLINK_FOLLOW);
