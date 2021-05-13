@@ -22,6 +22,7 @@ import (
 	"net"
 	"runtime"
 	"strings"
+	"time"
 
 	humanize "github.com/dustin/go-humanize"
 	"github.com/minio/minio/cmd/config"
@@ -135,6 +136,7 @@ func printServerCommonMsg(apiEndpoints []string) {
 	apiEndpointStr := strings.Join(apiEndpoints, "  ")
 
 	// Colorize the message and print.
+	logStartupMessage(color.Blue("Date: ") + color.Bold(fmt.Sprintf("%s ", time.Now().Format("2006.01.02 15:04:05"))))
 	logStartupMessage(color.Blue("Endpoint: ") + color.Bold(fmt.Sprintf(getFormatStr(len(apiEndpointStr), 1), apiEndpointStr)))
 	if color.IsTerminal() && !globalCLIContext.Anonymous {
 		logStartupMessage(color.Blue("AccessKey: ") + color.Bold(fmt.Sprintf("%s ", cred.AccessKey)))
