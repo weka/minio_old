@@ -552,10 +552,6 @@ func (sys *IAMSys) DeletePolicy(policyName string) error {
 	defer sys.store.unlock()
 
 	err := sys.store.deletePolicyDoc(context.Background(), policyName)
-	if err == errNoSuchPolicy {
-		// Ignore error if policy is already deleted.
-		err = nil
-	}
 
 	delete(sys.iamPolicyDocsMap, policyName)
 
