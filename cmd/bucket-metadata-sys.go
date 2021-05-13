@@ -404,12 +404,6 @@ func (sys *BucketMetadataSys) GetConfig(bucket string) (BucketMetadata, error) {
 		return newBucketMetadata(bucket), errInvalidArgument
 	}
 
-	sys.RLock()
-	meta, ok := sys.metadataMap[bucket]
-	sys.RUnlock()
-	if ok {
-		return meta, nil
-	}
 	meta, err := loadBucketMetadata(GlobalContext, objAPI, bucket)
 	if err != nil {
 		return meta, err
