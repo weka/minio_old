@@ -381,20 +381,22 @@ func createFile(ctx context.Context, filePath string, reader io.Reader, buf []by
 		return 0, err, os.File {}
 	}
 
-	if err := mkdirAll(pathutil.Dir(filePath), 0777); err != nil {
-		switch {
-		case osIsPermission(err):
-			return 0, errFileAccessDenied, os.File {}
-		case osIsExist(err):
-			return 0, errFileAccessDenied, os.File {}
-		case isSysErrIO(err):
-			return 0, errFaultyDisk, os.File {}
-		case isSysErrInvalidArg(err):
-			return 0, errUnsupportedDisk, os.File {}
-		case isSysErrNoSpace(err):
-			return 0, errDiskFull, os.File {}
+	if !GlobalFSOTmpfile {
+		if err := mkdirAll(pathutil.Dir(filePath), 0777); err != nil {
+			switch {
+			case osIsPermission(err):
+				return 0, errFileAccessDenied, os.File{}
+			case osIsExist(err):
+				return 0, errFileAccessDenied, os.File{}
+			case isSysErrIO(err):
+				return 0, errFaultyDisk, os.File{}
+			case isSysErrInvalidArg(err):
+				return 0, errUnsupportedDisk, os.File{}
+			case isSysErrNoSpace(err):
+				return 0, errDiskFull, os.File{}
+			}
+			return 0, err, os.File{}
 		}
-		return 0, err, os.File {}
 	}
 
 	var writer *os.File
