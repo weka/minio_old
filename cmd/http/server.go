@@ -39,7 +39,7 @@ const (
 	serverShutdownPoll = 500 * time.Millisecond
 
 	// DefaultShutdownTimeout - default shutdown timeout used for graceful http server shutdown.
-	DefaultShutdownTimeout = 5 * time.Second
+	DefaultShutdownTimeout = 120 * time.Second
 
 	// DefaultMaxHeaderBytes - default maximum HTTP header size in bytes.
 	DefaultMaxHeaderBytes = 1 * humanize.MiByte
