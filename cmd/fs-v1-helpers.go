@@ -19,6 +19,7 @@ package cmd
 import "C"
 import (
 	"context"
+	"errors"
 	"fmt"
 	"golang.org/x/sys/unix"
 	"io"
@@ -578,7 +579,10 @@ func fsDeleteFile(ctx context.Context, basePath, deletePath string) error {
 	}
 
 	// ignore that error in case we're not running on a supported fs
-	_ = fsDeleteFileFast(deletePath)
+	err := fsDeleteFileFast(deletePath)
+	if errors.Is(err, syscall.Errno(0)) {
+		return nil
+	}
 
 	if err := deleteFile(basePath, deletePath, false); err != nil {
 		if err != errFileNotFound {
