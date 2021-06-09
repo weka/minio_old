@@ -43,4 +43,5 @@ const (
 	EnvRegion    = "MINIO_REGION"    // legacy
 
 	EnvIAMRefreshSecInterval = "MINIO_IAM_REFRESH_SEC_INTERVAL"
+	EnvSTSMinDuration = "MINIO_STS_MIN_DURATION"
 )
