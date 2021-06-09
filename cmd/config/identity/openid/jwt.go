@@ -117,6 +117,20 @@ type JWT struct {
 	Config
 }
 
+func getMinimalExpiration() int64 {
+	if env.IsSet(config.EnvSTSMinDuration) {
+		minimalExpirationInt, err := strconv.ParseInt(env.Get(config.EnvSTSMinDuration, "10"), 10, 64)
+		if err == nil {
+			if minimalExpirationInt > 0 {
+				return minimalExpirationInt
+			}
+		}
+	}
+
+	// default minimal expiration : 900 seconds
+	return 900
+}
+
 // GetDefaultExpiration - returns the expiration seconds expected.
 func GetDefaultExpiration(dsecs string) (time.Duration, error) {
 	defaultExpiryDuration := time.Duration(60) * time.Minute // Defaults to 1hr.
@@ -126,10 +140,12 @@ func GetDefaultExpiration(dsecs string) (time.Duration, error) {
 			return 0, auth.ErrInvalidDuration
 		}
 
+		minimalExpiration := getMinimalExpiration()
+
 		// The duration, in seconds, of the role session.
 		// The value can range from 900 seconds (15 minutes)
 		// up to 7 days.
-		if expirySecs < 900 || expirySecs > 604800 {
+		if expirySecs < minimalExpiration || expirySecs > 604800 {
 			return 0, auth.ErrInvalidDuration
 		}
 
