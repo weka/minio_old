@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/minio/minio/cmd/logger"
@@ -894,6 +895,16 @@ func (a adminAPIHandlers) RemoveCannedPolicy(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+func isDefaultPolicy(policyName string) bool {
+	defaultPolicies := []string {"writeonly", "readonly", "readwrite", "diagnostics", "consoleAdmin"}
+	for _, p := range defaultPolicies {
+		if strings.Compare(p, policyName) == 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // AddCannedPolicy - PUT /minio/admin/v3/add-canned-policy?name=<policy_name>
 func (a adminAPIHandlers) AddCannedPolicy(w http.ResponseWriter, r *http.Request) {
 	ctx := newContext(r, w, "AddCannedPolicy")
@@ -907,6 +918,12 @@ func (a adminAPIHandlers) AddCannedPolicy(w http.ResponseWriter, r *http.Request
 
 	vars := mux.Vars(r)
 	policyName := vars["name"]
+
+	// Error out if current request try to override an existing, default policy
+	if isDefaultPolicy(policyName) {
+		writeErrorResponseJSON(ctx, w, APIError{Code: "UnauthorizedAccess", Description: "You are not authorized to override a default policy", HTTPStatusCode: http.StatusUnauthorized}, r.URL)
+		return
+	}
 
 	// Error out if Content-Length is missing.
 	if r.ContentLength <= 0 {
