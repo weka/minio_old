@@ -1914,9 +1914,8 @@ func (sys *IAMSys) IsAllowed(args iampolicy.Args) bool {
 // Set default canned policies only if not already overridden by users.
 func setDefaultCannedPolicies(policies map[string]iampolicy.Policy) {
 	logger.Info("using logger.Info - omerp: Inside setDefaultCannedPolicies")
-	logger.Error("using logger.Error - omerp: Inside setDefaultCannedPolicies")
 	fmt.Println("using fmt.Println - omerp: Inside setDefaultCannedPolicies")
-	
+
 	_, ok := policies["writeonly"]
 	if !ok {
 		policies["writeonly"] = iampolicy.WriteOnly
