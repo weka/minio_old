@@ -86,6 +86,7 @@ func (fs *FSObjects) backgroundAppend(ctx context.Context, bucket, object, uploa
 	// Since we append sequentially nextPartNumber will always be len(file.parts)+1
 	nextPartNumber := len(file.parts) + 1
 	uploadIDDir := fs.getUploadIDDir(bucket, object, uploadID)
+	logger.Info("start of backgroundAppend at time:%s, uploadID=%s, next_part_num=%d", time.Now().Format("2006.01.02 15:04:05"), uploadID, nextPartNumber)
 
 	entries, err := readDir(uploadIDDir)
 	if err != nil {
@@ -123,6 +124,7 @@ func (fs *FSObjects) backgroundAppend(ctx context.Context, bucket, object, uploa
 		}
 
 		file.parts = append(file.parts, PartInfo{PartNumber: partNumber, ETag: etag, ActualSize: actualSize})
+		logger.Info("end of backgroundAppend at time:%s, uploadID=%s, next_part_num=%d", time.Now().Format("2006.01.02 15:04:05"), uploadID, nextPartNumber)
 		nextPartNumber++
 	}
 }
@@ -568,6 +570,8 @@ func (fs *FSObjects) ListObjectParts(ctx context.Context, bucket, object, upload
 // Implements S3 compatible Complete multipart API.
 func (fs *FSObjects) CompleteMultipartUpload(ctx context.Context, bucket string, object string, uploadID string, parts []CompletePart, opts ObjectOptions) (oi ObjectInfo, e error) {
 
+	logger.Info("start of CompleteMultipartUpload at time:%s", time.Now().Format("2006.01.02 15:04:05"))
+
 	var actualSize int64
 
 	if err := checkCompleteMultipartArgs(ctx, bucket, object, fs); err != nil {
@@ -812,6 +816,8 @@ func (fs *FSObjects) CompleteMultipartUpload(ctx context.Context, bucket string,
 	if err != nil {
 		return oi, toObjectErr(err, bucket, object)
 	}
+
+	logger.Info("end of CompleteMultipartUpload at time:%s", time.Now().Format("2006.01.02 15:04:05"))
 
 	return fsMeta.ToObjectInfo(bucket, object, fi), nil
 }
