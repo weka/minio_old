@@ -80,3 +80,17 @@ var AdminDiagnostics = Policy{
 		},
 	},
 }
+
+// None - provides an empty access IAM.
+var None = Policy{
+	Version: DefaultVersion,
+	Statements: []Statement{
+		{
+			SID:    policy.ID(""),
+			Effect: policy.Allow,
+			Actions: NewActionSet(),
+			Resources: NewResourceSet(NewResource("*", "")),
+		},
+	},
+}
+
