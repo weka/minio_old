@@ -322,15 +322,15 @@ func (fs *FSObjects) crawlBucket(ctx context.Context, bucket string, cache dataU
 		}
 		cache.Info.lifeCycle = lc
 	}
-
 	// Load bucket info.
-	cache, err = crawlDataFolder(ctx, fs.fsPath, cache, func(item crawlItem) (sizeSummary, error) {
+	cache, err = crawlDataFolder(ctx, fs.fsPath, cache, globalBucketVersioningSys.Enabled(bucket), func(item crawlItem) (sizeSummary, error) {
 		bucket, object := item.bucket, item.objectPath()
 		fsMetaBytes, err := ioutil.ReadFile(pathJoin(fs.fsPath, minioMetaBucket, bucketMetaPrefix, bucket, object, fs.metaJSONFile))
 		if err != nil && !osIsNotExist(err) {
 			if intDataUpdateTracker.debug {
 				logger.Info(color.Green("crawlBucket:")+" object return unexpected error: %v/%v: %w", item.bucket, item.objectPath(), err)
 			}
+
 			return sizeSummary{}, errSkipFile
 		}
 
@@ -352,6 +352,7 @@ func (fs *FSObjects) crawlBucket(ctx context.Context, bucket string, cache dataU
 			if intDataUpdateTracker.debug {
 				logger.Info(color.Green("crawlBucket:")+" object path missing: %v: %w", item.Path, fiErr)
 			}
+
 			return sizeSummary{}, errSkipFile
 		}
 
@@ -363,7 +364,6 @@ func (fs *FSObjects) crawlBucket(ctx context.Context, bucket string, cache dataU
 
 		return sizeSummary{totalSize: fi.Size()}, nil
 	})
-
 	return cache, err
 }
 

@@ -21,12 +21,14 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"github.com/minio/minio/cmd/config/identity/openid"
 	"math/rand"
 	"net"
 	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -303,6 +305,72 @@ func handleCommonEnvVars() {
 		os.Unsetenv(config.EnvAccessKeyOld)
 		os.Unsetenv(config.EnvSecretKeyOld)
 	}
+
+	var minimalExpirationInt int64 = 900
+	if env.IsSet(config.EnvSTSMinDuration) {
+		minimalExpirationInt, err = strconv.ParseInt(env.Get(config.EnvSTSMinDuration, ""), 10, 64)
+		if err != nil || minimalExpirationInt <= 0 {
+			minimalExpirationInt = 900
+		}
+	}
+
+	openid.GlobalSTSMinDuration = minimalExpirationInt
+
+	var crawlSleepPerFolder time.Duration
+	if env.IsSet(config.EnvCrawlSleepPerFolder) {
+		crawlSleepPerFolderMsec, err := strconv.ParseInt(env.Get(config.EnvCrawlSleepPerFolder, ""), 10, 64)
+		if err != nil || crawlSleepPerFolderMsec <= 0 {
+			crawlSleepPerFolderMsec = 1
+		}
+
+		crawlSleepPerFolder =  time.Duration(crawlSleepPerFolderMsec) * time.Millisecond
+	} else {
+		crawlSleepPerFolder =  1 * time.Millisecond
+	}
+
+	GlobalCrawlSleepPerFolder = crawlSleepPerFolder
+
+	var crawlStartDelay time.Duration
+	if env.IsSet(config.EnvCrawlStartDelay) {
+		crawlStartDelaySec, err := strconv.ParseInt(env.Get(config.EnvCrawlStartDelay, ""), 10, 64)
+		if err != nil || crawlStartDelaySec <= 0 {
+			crawlStartDelaySec = 300
+		}
+
+		crawlStartDelay =  time.Duration(crawlStartDelaySec) * time.Second
+	} else {
+		crawlStartDelay =  300 * time.Second
+	}
+
+	GlobalCrawlStartDelay = crawlStartDelay
+
+
+	var dataUsageUpdateDirCycles uint64
+	if env.IsSet(config.EnvDataUsageUpdateDirCycles) {
+		dataUsageUpdateDirCycles, err = strconv.ParseUint(env.Get(config.EnvDataUsageUpdateDirCycles, ""), 10, 64)
+		if err != nil || dataUsageUpdateDirCycles <= 0 {
+			dataUsageUpdateDirCycles = 16
+		}
+
+	} else {
+		dataUsageUpdateDirCycles = 16
+	}
+
+	GlobalDataUsageUpdateDirCycles = dataUsageUpdateDirCycles
+
+	var dataUsageSleepPerFileNanoSec uint64
+	if env.IsSet(config.EnvDataUsageSleepPerFile) {
+		dataUsageSleepPerFileNanoSec, err = strconv.ParseUint(env.Get(config.EnvDataUsageSleepPerFile, ""), 10, 64)
+		if err != nil {
+			dataUsageSleepPerFileNanoSec = 0
+		}
+
+	} else {
+		dataUsageSleepPerFileNanoSec = 0
+	}
+
+	GlobalDataUsageSleepPerFile = time.Duration(dataUsageSleepPerFileNanoSec) * time.Nanosecond
+
 }
 
 func logStartupMessage(msg string) {
@@ -310,6 +378,7 @@ func logStartupMessage(msg string) {
 		globalConsoleSys.Send(msg, string(logger.All))
 	}
 	logger.StartupMessage(msg)
+
 }
 
 

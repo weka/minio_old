@@ -291,6 +291,11 @@ var (
 	GlobalFSOTmpfile bool
 	GlobalIsFastFS bool
 
+	GlobalCrawlSleepPerFolder time.Duration
+	GlobalCrawlStartDelay time.Duration
+	GlobalDataUsageUpdateDirCycles uint64
+	GlobalDataUsageSleepPerFile time.Duration
+
 )
 
 

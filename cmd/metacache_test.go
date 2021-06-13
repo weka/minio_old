@@ -292,7 +292,7 @@ func Test_metacache_worthKeeping(t *testing.T) {
 				want = wantResults[i]
 			}
 
-			got := tt.worthKeeping(7 + dataUsageUpdateDirCycles)
+			got := tt.worthKeeping(7 + GlobalDataUsageUpdateDirCycles)
 			if got != want {
 				t.Errorf("#%d: want %v, got %v", i, want, got)
 			}
