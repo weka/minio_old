@@ -44,9 +44,7 @@ import (
 )
 
 const (
-	dataCrawlSleepPerFolder  = time.Millisecond // Time to wait between folders.
-	dataCrawlStartDelay      = 5 * time.Minute  // Time to wait on startup and between cycles.
-	dataUsageUpdateDirCycles = 16               // Visit all folders every n cycles.
+	// Visit all folders every n cycles.
 
 	healDeleteDangling    = true
 	healFolderIncludeProb = 32  // Include a clean folder one in n cycles.
@@ -59,7 +57,7 @@ var (
 
 	dataCrawlerLeaderLockTimeout = newDynamicTimeout(30*time.Second, 10*time.Second)
 	// Sleeper values are updated when config is loaded.
-	crawlerSleeper = newDynamicSleeper(10, 10*time.Second)
+	crawlerSleeper = newDynamicSleeper(10, GlobalDataUsageSleepPerFile)
 )
 
 // initDataCrawler will start the crawler unless disabled.
@@ -79,7 +77,7 @@ func runDataCrawler(ctx context.Context, objAPI ObjectLayer) {
 	for {
 		err := locker.GetLock(ctx, dataCrawlerLeaderLockTimeout)
 		if err != nil {
-			time.Sleep(time.Duration(r.Float64() * float64(dataCrawlStartDelay)))
+			time.Sleep(time.Duration(r.Float64() * float64(GlobalCrawlStartDelay)))
 			continue
 		}
 		break
@@ -100,7 +98,7 @@ func runDataCrawler(ctx context.Context, objAPI ObjectLayer) {
 		}
 	}
 
-	crawlTimer := time.NewTimer(dataCrawlStartDelay)
+	crawlTimer := time.NewTimer(GlobalCrawlStartDelay)
 	defer crawlTimer.Stop()
 
 	for {
@@ -109,7 +107,7 @@ func runDataCrawler(ctx context.Context, objAPI ObjectLayer) {
 			return
 		case <-crawlTimer.C:
 			// Reset the timer for next cycle.
-			crawlTimer.Reset(dataCrawlStartDelay)
+			crawlTimer.Reset(GlobalCrawlStartDelay)
 
 			if intDataUpdateTracker.debug {
 				console.Debugln("starting crawler cycle")
@@ -163,13 +161,15 @@ type folderScanner struct {
 	newFolders      []cachedFolder
 	existingFolders []cachedFolder
 	disks           []StorageAPI
+
+	isVersioned bool
 }
 
 // crawlDataFolder will crawl the basepath+cache.Info.Name and return an updated cache.
 // The returned cache will always be valid, but may not be updated from the existing.
 // Before each operation sleepDuration is called which can be used to temporarily halt the crawler.
 // If the supplied context is canceled the function will return at the first chance.
-func crawlDataFolder(ctx context.Context, basePath string, cache dataUsageCache, getSize getSizeFn) (dataUsageCache, error) {
+func crawlDataFolder(ctx context.Context, basePath string, cache dataUsageCache, isVersioned bool, getSize getSizeFn) (dataUsageCache, error) {
 	t := UTCNow()
 
 	logPrefix := color.Green("data-usage: ")
@@ -196,6 +196,7 @@ func crawlDataFolder(ctx context.Context, basePath string, cache dataUsageCache,
 		dataUsageCrawlDebug: intDataUpdateTracker.debug,
 		healFolderInclude:   0,
 		healObjectSelect:    0,
+		isVersioned: isVersioned,
 	}
 
 	// Add disks for set healing.
@@ -296,14 +297,14 @@ func crawlDataFolder(ctx context.Context, basePath string, cache dataUsageCache,
 		default:
 		}
 		h := hashPath(folder.name)
-		if !h.mod(s.oldCache.Info.NextCycle, dataUsageUpdateDirCycles) {
+		if !h.mod(s.oldCache.Info.NextCycle, uint32(GlobalDataUsageUpdateDirCycles)) {
 			if !h.mod(s.oldCache.Info.NextCycle, s.healFolderInclude/folder.objectHealProbDiv) {
 				s.newCache.replaceHashed(h, folder.parent, s.oldCache.Cache[h.Key()])
 				continue
 			} else {
 				folder.objectHealProbDiv = s.healFolderInclude
 			}
-			folder.objectHealProbDiv = dataUsageUpdateDirCycles
+			folder.objectHealProbDiv = uint32(GlobalDataUsageUpdateDirCycles)
 		}
 		if s.withFilter != nil {
 			_, prefix := path2BucketObjectWithBasePath(basePath, folder.name)
@@ -392,9 +393,11 @@ func (f *folderScanner) scanQueuedLevels(ctx context.Context, folders []cachedFo
 				}
 			}
 		}
-		crawlerSleeper.Sleep(ctx, dataCrawlSleepPerFolder)
+		crawlerSleeper.Sleep(ctx, GlobalCrawlSleepPerFolder)
 
 		cache := dataUsageEntry{}
+
+
 
 		err := readDirFn(path.Join(f.root, folder.name), func(entName string, typ os.FileMode) error {
 			// Parse
@@ -453,10 +456,14 @@ func (f *folderScanner) scanQueuedLevels(ctx context.Context, folders []cachedFo
 				debug:      f.dataUsageCrawlDebug,
 				lifeCycle:  activeLifeCycle,
 				heal:       thisHash.mod(f.oldCache.Info.NextCycle, f.healObjectSelect/folder.objectHealProbDiv) && globalIsErasure,
+				isVersioned: f.isVersioned,
 			}
 			sizeSummary, err := f.getSize(item)
 
-			wait()
+			if GlobalDataUsageSleepPerFile > 0 {
+				wait()
+			}
+
 			if err == errSkipFile {
 				return nil
 			}
@@ -663,7 +670,7 @@ func (f *folderScanner) deepScanFolder(ctx context.Context, folder cachedFolder)
 			dirStack = append(dirStack, entName)
 			err := readDirFn(path.Join(dirStack...), addDir)
 			dirStack = dirStack[:len(dirStack)-1]
-			crawlerSleeper.Sleep(ctx, dataCrawlSleepPerFolder)
+			crawlerSleeper.Sleep(ctx, GlobalCrawlSleepPerFolder)
 			return err
 		}
 
@@ -683,7 +690,6 @@ func (f *folderScanner) deepScanFolder(ctx context.Context, folder cachedFolder)
 			}
 			activeLifeCycle = f.oldCache.Info.lifeCycle
 		}
-
 		sizeSummary, err := f.getSize(
 			crawlItem{
 				Path:       fileName,
@@ -694,6 +700,7 @@ func (f *folderScanner) deepScanFolder(ctx context.Context, folder cachedFolder)
 				debug:      f.dataUsageCrawlDebug,
 				lifeCycle:  activeLifeCycle,
 				heal:       hashPath(path.Join(prefix, entName)).mod(f.oldCache.Info.NextCycle, f.healObjectSelect/folder.objectHealProbDiv) && globalIsErasure,
+				isVersioned: globalBucketVersioningSys.Enabled(bucket),
 			})
 
 		// Wait to throttle IO
@@ -726,6 +733,7 @@ type crawlItem struct {
 	lifeCycle  *lifecycle.Lifecycle
 	heal       bool // Has the object been selected for heal check?
 	debug      bool
+	isVersioned      bool
 }
 
 type sizeSummary struct {
@@ -896,7 +904,7 @@ func (i *crawlItem) applyActions(ctx context.Context, o ObjectLayer, meta action
 		}
 		opts.VersionID = obj.VersionID
 	case lifecycle.DeleteAction, lifecycle.DeleteRestoredAction:
-		opts.Versioned = globalBucketVersioningSys.Enabled(i.bucket)
+		opts.Versioned = i.isVersioned
 	case lifecycle.TransitionAction, lifecycle.TransitionVersionAction:
 		if obj.TransitionStatus == "" {
 			opts.Versioned = globalBucketVersioningSys.Enabled(obj.Bucket)
@@ -920,7 +928,6 @@ func (i *crawlItem) applyActions(ctx context.Context, o ObjectLayer, meta action
 		// Notification already sent at *deleteTransitionedObject*, return '0' here.
 		return 0
 	}
-
 	obj, err = o.DeleteObject(ctx, i.bucket, i.objectPath(), opts)
 	if err != nil {
 		// Assume it is still there.
@@ -932,7 +939,6 @@ func (i *crawlItem) applyActions(ctx context.Context, o ObjectLayer, meta action
 	if obj.DeleteMarker {
 		eventName = event.ObjectRemovedDeleteMarkerCreated
 	}
-
 	// Notify object deleted event.
 	sendEvent(eventArgs{
 		EventName:  eventName,
@@ -940,6 +946,7 @@ func (i *crawlItem) applyActions(ctx context.Context, o ObjectLayer, meta action
 		Object:     obj,
 		Host:       "Internal: [ILM-EXPIRY]",
 	})
+
 	return 0
 }
 

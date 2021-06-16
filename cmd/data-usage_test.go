@@ -269,7 +269,7 @@ func TestDataUsageUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Changed dir must be picked up in this many cycles.
-	for i := 0; i < dataUsageUpdateDirCycles; i++ {
+	for i := 0; i < GlobalDataUsageUpdateDirCycles; i++ {
 		got, err = crawlDataFolder(context.Background(), base, got, getSize)
 		if err != nil {
 			t.Fatal(err)
@@ -551,7 +551,7 @@ func TestDataUsageUpdatePrefix(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Changed dir must be picked up in this many cycles.
-	for i := 0; i < dataUsageUpdateDirCycles; i++ {
+	for i := 0; i < GlobalDataUsageUpdateDirCycles; i++ {
 		got, err = crawlDataFolder(context.Background(), base, got, getSize)
 		if err != nil {
 			t.Fatal(err)

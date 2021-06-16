@@ -44,4 +44,10 @@ const (
 
 	EnvIAMRefreshSecInterval = "MINIO_IAM_REFRESH_SEC_INTERVAL"
 	EnvSTSMinDuration = "MINIO_STS_MIN_DURATION"
+
+	EnvCrawlSleepPerFolder = "MINIO_CRAWL_SLEEP_PER_FOLDER"
+	EnvCrawlStartDelay = "MINIO_CRAWL_START_DELAY"
+	EnvDataUsageUpdateDirCycles = "MINIO_DATA_USAGE_UPDATE_DIR_CYCLES"
+	EnvDataUsageSleepPerFile = "MINIO_DATA_USAGE_SLEEP_PER_FILE"
+
 )

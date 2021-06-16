@@ -430,9 +430,9 @@ func (sys *NotificationSys) SignalService(sig serviceSignal) []NotificationPeerE
 func (sys *NotificationSys) updateBloomFilter(ctx context.Context, current uint64) (*bloomFilter, error) {
 	var req = bloomFilterRequest{
 		Current: current,
-		Oldest:  current - dataUsageUpdateDirCycles,
+		Oldest:  current - GlobalDataUsageUpdateDirCycles,
 	}
-	if current < dataUsageUpdateDirCycles {
+	if current < GlobalDataUsageUpdateDirCycles {
 		req.Oldest = 0
 	}
 
