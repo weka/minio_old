@@ -475,6 +475,12 @@ func (iamOS *IAMObjectStore) loadAll(ctx context.Context, sys *IAMSys) error {
 		sys.iamUserPolicyMap[k] = v
 	}
 
+	for k, _ := range sys.iamUsersMap {
+		if _, ok := iamUsersMap[k]; !ok {
+			delete(sys.iamUsersMap, k)
+		}
+	}
+
 	// purge any expired entries which became expired now.
 	var expiredEntries []string
 	for k, v := range sys.iamUsersMap {
