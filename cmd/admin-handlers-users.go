@@ -881,6 +881,12 @@ func (a adminAPIHandlers) RemoveCannedPolicy(w http.ResponseWriter, r *http.Requ
 	vars := mux.Vars(r)
 	policyName := vars["name"]
 
+	// Error out if current request try to override an existing, default policy
+	if isDefaultPolicy(policyName) {
+		writeErrorResponseJSON(ctx, w, APIError{Code: "UnauthorizedAccess", Description: "You are not authorized to delete a default policy", HTTPStatusCode: http.StatusUnauthorized}, r.URL)
+		return
+	}
+
 	if err := globalIAMSys.DeletePolicy(policyName); err != nil {
 		writeErrorResponseJSON(ctx, w, toAdminAPIErr(ctx, err), r.URL)
 		return
