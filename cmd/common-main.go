@@ -371,6 +371,32 @@ func handleCommonEnvVars() {
 
 	GlobalDataUsageSleepPerFile = time.Duration(dataUsageSleepPerFileNanoSec) * time.Nanosecond
 
+	var staleUploadsExpirySec uint64
+	if env.IsSet(config.EnvStaleUploadsExpiry) {
+		staleUploadsExpirySec, err = strconv.ParseUint(env.Get(config.EnvStaleUploadsExpiry, ""), 10, 64)
+		if err != nil || staleUploadsExpirySec == 0 {
+			staleUploadsExpirySec = 3600
+		}
+
+	} else {
+		staleUploadsExpirySec = 3600
+	}
+
+	GlobalStaleUploadsExpiry = time.Duration(staleUploadsExpirySec) * time.Second
+
+	var staleUploadsCleanupIntervalSec uint64
+	if env.IsSet(config.EnvStaleUploadsCleanupInterval) {
+		staleUploadsCleanupIntervalSec, err = strconv.ParseUint(env.Get(config.EnvStaleUploadsCleanupInterval, ""), 10, 64)
+		if err != nil || staleUploadsCleanupIntervalSec == 0 {
+			staleUploadsCleanupIntervalSec = 3600
+		}
+
+	} else {
+		staleUploadsCleanupIntervalSec = 3600
+	}
+
+	GlobalStaleUploadsCleanupInterval = time.Duration(staleUploadsCleanupIntervalSec) * time.Second
+
 }
 
 func logStartupMessage(msg string) {
