@@ -50,4 +50,7 @@ const (
 	EnvDataUsageUpdateDirCycles = "MINIO_DATA_USAGE_UPDATE_DIR_CYCLES"
 	EnvDataUsageSleepPerFile = "MINIO_DATA_USAGE_SLEEP_PER_FILE"
 
+	EnvStaleUploadsExpiry = "MINIO_STALE_UPLOADS_EXPIRY"
+	EnvStaleUploadsCleanupInterval = "MINIO_STALE_UPLOADS_CLEANUP_INTERVAL"
+
 )
