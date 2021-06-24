@@ -471,15 +471,22 @@ func (iamOS *IAMObjectStore) loadAll(ctx context.Context, sys *IAMSys) error {
 		sys.iamUsersMap[k] = v
 	}
 
-	for k, v := range iamUserPolicyMap {
-		sys.iamUserPolicyMap[k] = v
-	}
-
 	for k, _ := range sys.iamUsersMap {
 		if _, ok := iamUsersMap[k]; !ok {
 			delete(sys.iamUsersMap, k)
 		}
 	}
+
+	for k, v := range iamUserPolicyMap {
+		sys.iamUserPolicyMap[k] = v
+	}
+
+	for k, _ := range sys.iamUserPolicyMap {
+		if _, ok := iamUserPolicyMap[k]; !ok {
+			delete(sys.iamUserPolicyMap, k)
+		}
+	}
+
 
 	// purge any expired entries which became expired now.
 	var expiredEntries []string
@@ -507,8 +514,20 @@ func (iamOS *IAMObjectStore) loadAll(ctx context.Context, sys *IAMSys) error {
 		sys.iamGroupPolicyMap[k] = v
 	}
 
+	for k, _ := range sys.iamGroupPolicyMap {
+		if _, ok := iamGroupPolicyMap[k]; !ok {
+			delete(sys.iamGroupPolicyMap, k)
+		}
+	}
+
 	for k, v := range iamGroupsMap {
 		sys.iamGroupsMap[k] = v
+	}
+
+	for k, _ := range sys.iamGroupsMap {
+		if _, ok := iamGroupsMap[k]; !ok {
+			delete(sys.iamGroupsMap, k)
+		}
 	}
 
 	sys.buildUserGroupMemberships()
