@@ -1175,6 +1175,7 @@ func (fs *FSObjects) putObject(ctx context.Context, bucket string, object string
 		wlk, err = fs.rwPool.Write(fsMetaPath)
 		var freshFile bool
 		if err != nil {
+			fsMakeInodeFast(path.Dir(fsMetaPath), 040777)
 			wlk, err = fs.rwPool.Create(fsMetaPath)
 			if err != nil {
 				logger.LogIf(ctx, err)
