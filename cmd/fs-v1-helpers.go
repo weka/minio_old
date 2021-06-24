@@ -105,10 +105,22 @@ func wekaLinkFileFast(fullPath string, file os.File) (err error) {
 	return nil
 }
 
+func wekaMakeInodeFast(root string, filename string, mode int32) (err error) {
+    var MKND = int32(0x4D4B4E44) // = 'MKND'
+	err = wekaIoctl(MKND, root, filename, mode)
+	return err
+}
+
 func WekaDeleteFileFast(root string, filename string) (err error) {
 	var ULNK = int32(0x554C4E4B) // = 'ULNK'
 	err = wekaIoctl(ULNK, root, filename, 0)
 	return err
+}
+
+func fsMakeInodeFast(filePath string, mode int32) (err error) {
+    dir, file := pathutil.Split(filePath)
+    err = wekaMakeInodeFast(dir, file, mode)
+    return err
 }
 
 func fsDeleteFileFast(filePath string) (err error) {
