@@ -250,9 +250,6 @@ func migrateConfigPrefixToEncrypted(objAPI ObjectLayer, activeCredOld auth.Crede
 
 			cdata, err = readConfig(GlobalContext, objAPI, obj.Name)
 			if err != nil {
-				if err == errConfigNotFound {
-					continue
-				}
 				return err
 			}
 
