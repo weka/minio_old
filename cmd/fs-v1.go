@@ -1217,17 +1217,16 @@ func (fs *FSObjects) putObject(ctx context.Context, bucket string, object string
 	if GlobalFSOTmpfile {
 		fsTmpObjPath = pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID)
 		bytesWritten, err, file = fsCreateAndGetFile(ctx, fsTmpObjPath, data, buf, data.Size())
+
+		if err != nil {
+			defer func() {
+				file.Close()
+			}()
+		}
 	} else {
 		fsTmpObjPath = pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID, mustGetUUID())
 		bytesWritten, err = fsCreateFile(ctx, fsTmpObjPath, data, buf, data.Size())
 	}
-
-	defer func() {
-		if err != nil {
-			file.Close()
-		}
-	} ()
-
 
 	if err != nil {
 		return ObjectInfo{}, toObjectErr(err, bucket, object)
