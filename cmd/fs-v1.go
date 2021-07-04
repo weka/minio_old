@@ -32,6 +32,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
@@ -1261,6 +1262,10 @@ func (fs *FSObjects) putObject(ctx context.Context, bucket string, object string
 		if _, err = fsMeta.WriteTo(wlk); err != nil {
 			return ObjectInfo{}, toObjectErr(err, bucket, object)
 		}
+	}
+
+	if (GlobalFSOTmpfile) {
+		syscall.Fdatasync(int(file.Fd()))
 	}
 
 	// Stat the file to fetch timestamp, size.
