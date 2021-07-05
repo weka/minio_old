@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	etcd "go.etcd.io/etcd/clientv3"
 )
 

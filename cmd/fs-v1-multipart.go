@@ -17,10 +17,17 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
+	"github.com/minio/minio/cmd/logger"
+	mioutil "github.com/minio/minio/pkg/ioutil"
+	"github.com/minio/minio/pkg/trie"
+	"go.etcd.io/etcd/clientv3/concurrency"
 	"io/ioutil"
 	"os"
 	pathutil "path"
@@ -28,11 +35,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	jsoniter "github.com/json-iterator/go"
-	"github.com/minio/minio/cmd/logger"
-	mioutil "github.com/minio/minio/pkg/ioutil"
-	"github.com/minio/minio/pkg/trie"
+	"unsafe"
 )
 
 // Returns EXPORT/.minio.sys/multipart/SHA256/UPLOADID
@@ -67,24 +70,97 @@ func (fs *FSObjects) decodePartFile(name string) (partNumber int, etag string, a
 	return partNumber, result[1], actualSize, nil
 }
 
+func (fs *FSObjects) getMultipartLockEtcdKey(bucket, object, uploadID string) string {
+	return pathJoin("/multipart-lock/", bucket, object, uploadID)
+}
+
+func (fs *FSObjects) getMultipartEtcdKey(bucket, object, uploadID string) string {
+	return pathJoin("/multipart/", bucket, object, uploadID)
+}
+
+type MultipartStatus struct {
+	CurrentPart int32
+	FileSize int64
+}
+
 // Appends parts to an appendFile sequentially.
 func (fs *FSObjects) backgroundAppend(ctx context.Context, bucket, object, uploadID string) {
+	multipartLockEtcdKey := fs.getMultipartLockEtcdKey(bucket, object, uploadID)
+	multipartEtcdKey := fs.getMultipartEtcdKey(bucket, object, uploadID)
+	ctx = context.TODO()
+	//ctx, _ = context.WithDeadline(ctx, time.Now().Add(3*time.Minute))
+	//logger.Info("BACKGROUNDAPPEND! Deadline: %s", a1)
+	logger.Info("BACKGROUNDAPPEND!")
+	etcdSession, err := concurrency.NewSession(globalEtcdClient)
+	logger.Info("cp sess")
+
+	if err != nil {
+		logger.LogIf(ctx, err)
+		return
+	}
+	defer etcdSession.Close()
+	partLock := concurrency.NewMutex(etcdSession, multipartLockEtcdKey)
+	logger.Info("cp newmutex")
+	newCtx, _ := context.WithTimeout(ctx, 2000000 * time.Second)
+	err = partLock.Lock(newCtx)
+	if err != nil {
+		logger.LogIf(ctx, err)
+		return
+	}
+
+	logger.Info("cp lock %s", multipartLockEtcdKey)
+	defer func() {
+		partLock.Unlock(ctx)
+		logger.Info("cp unlock %s", multipartLockEtcdKey)
+	}()
+
+
+	logger.Info("cp1")
+
 	fs.appendFileMapMu.Lock()
+
 	logger.GetReqInfo(ctx).AppendTags("uploadID", uploadID)
+
 	file := fs.appendFileMap[uploadID]
 	if file == nil {
 		file = &fsAppendFile{
-			filePath: pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID, fmt.Sprintf("%s.%s", uploadID, mustGetUUID())),
+			//filePath: pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID, fmt.Sprintf("%s.%s", uploadID, mustGetUUID())),
+			filePath: pathJoin(fs.fsPath, minioMetaTmpBucket, fmt.Sprintf("%s.%s", getSHA256Hash([]byte(pathJoin(bucket, object))), uploadID)),
 		}
 		fs.appendFileMap[uploadID] = file
 	}
 	fs.appendFileMapMu.Unlock()
 
+
 	file.Lock()
 	defer file.Unlock()
+	logger.Info("cp2")
+
+
+    filePath := pathJoin(fs.fsPath, minioMetaTmpBucket, fmt.Sprintf("%s.%s", getSHA256Hash([]byte(pathJoin(bucket, object))), uploadID))
+	multipartStatusRaw, err := readKeyEtcd(ctx, globalEtcdClient, multipartEtcdKey)
+	var multipartStatus MultipartStatus
+	var nextPartNumber int
+	if err == nil {
+		multipartStatusBuffer := bytes.NewReader(multipartStatusRaw)
+		err = binary.Read(multipartStatusBuffer, binary.BigEndian, &multipartStatus)
+		if err != nil {
+			return
+		}
+
+		nextPartNumber = int(multipartStatus.CurrentPart + 1)
+	} else if err == errConfigNotFound {
+		nextPartNumber = 1
+		multipartStatus.CurrentPart = 0
+		multipartStatus.FileSize = 0
+	} else {
+		return
+	}
+
+	logger.Info("Multipart start: %s [next: %d, filesize: %d]", multipartEtcdKey, nextPartNumber, multipartStatus.FileSize)
 
 	// Since we append sequentially nextPartNumber will always be len(file.parts)+1
-	nextPartNumber := len(file.parts) + 1
+	//nextPartNumber := parts + 1
 	uploadIDDir := fs.getUploadIDDir(bucket, object, uploadID)
 
 	entries, err := readDir(uploadIDDir)
@@ -93,31 +169,91 @@ func (fs *FSObjects) backgroundAppend(ctx context.Context, bucket, object, uploa
 		logger.LogIf(ctx, err)
 		return
 	}
-	sort.Strings(entries)
 
+	sort.Strings(entries)
+	logger.Info("cp3 %s", entries)
 	for _, entry := range entries {
 		if entry == fs.metaJSONFile {
 			continue
 		}
 		partNumber, etag, actualSize, err := fs.decodePartFile(entry)
+		logger.Info("cp 4.5 %d", partNumber)
+
 		if err != nil {
 			// Skip part files whose name don't match expected format. These could be backend filesystem specific files.
+			logger.Info("cp out 1")
+
 			continue
 		}
 		if partNumber < nextPartNumber {
 			// Part already appended.
+			if len(file.parts) == partNumber - 1 {
+				logger.Info("late append %d", partNumber)
+				file.parts = append(file.parts, PartInfo{PartNumber: partNumber, ETag: etag, ActualSize: actualSize})
+			}
+
+			logger.Info("cp out 2")
 			continue
 		}
 		if partNumber > nextPartNumber {
 			// Required part number is not yet uploaded.
+			logger.Info("cp :O")
 			return
 		}
 
+		var fi os.FileInfo
+		var fileSize int64
+		fi, err = os.Stat(filePath)
+		if err == nil {
+			fileSize = fi.Size()
+		} else {
+			fileSize = 0
+		}
+
+		if fileSize > multipartStatus.FileSize {
+			logger.Info("Truncate: %s [%d to %d]", multipartEtcdKey, fileSize, multipartStatus.FileSize)
+			err = os.Truncate(filePath, multipartStatus.FileSize)
+			if err != nil {
+				return
+			}
+		}
+
+		logger.Info("Multipart found: %s [next: %d]", multipartEtcdKey, nextPartNumber)
 		partPath := pathJoin(uploadIDDir, entry)
-		err = mioutil.AppendFile(file.filePath, partPath, globalFSOSync)
+		err = mioutil.AppendFile(filePath, partPath, globalFSOSync)
 		if err != nil {
 			reqInfo := logger.GetReqInfo(ctx).AppendTags("partPath", partPath)
-			reqInfo.AppendTags("filepath", file.filePath)
+			reqInfo.AppendTags("filepath", filePath)
+			logger.LogIf(ctx, err)
+			return
+		}
+		//exec.Command("bash", "-c", fmt.Sprintf("cat '%s' >> '%s'", partPath, filePath)).Run()
+		logger.Info("cp after append")
+
+
+
+		var newPartsVal = make([]byte, unsafe.Sizeof(multipartStatus))
+		buffer := bytes.NewBuffer(newPartsVal)
+		//binary.BigEndian.PutUint32(newPartsVal, ui	nt32(nextPartNumber))
+		multipartStatus.CurrentPart = int32(nextPartNumber)
+		fi, err = os.Stat(filePath)
+		if err == nil {
+			fileSize = fi.Size()
+		} else {
+			return
+		}
+
+		multipartStatus.FileSize = fi.Size()
+		err = binary.Write(buffer, binary.BigEndian, multipartStatus)
+		if err != nil {
+			logger.LogIf(ctx, err)
+
+			return
+		}
+
+		logger.Info("Writing parts: %s %d", multipartStatus, len(newPartsVal))
+		err = saveKeyEtcd(ctx, globalEtcdClient, multipartEtcdKey, newPartsVal)
+		if err != nil {
 			logger.LogIf(ctx, err)
 			return
 		}
@@ -125,6 +261,8 @@ func (fs *FSObjects) backgroundAppend(ctx context.Context, bucket, object, uploa
 		file.parts = append(file.parts, PartInfo{PartNumber: partNumber, ETag: etag, ActualSize: actualSize})
 		nextPartNumber++
 	}
+
+	logger.Info("cpend")
 }
 
 // ListMultipartUploads - lists all the uploadIDs for the specified object.
@@ -371,7 +509,7 @@ func (fs *FSObjects) PutObjectPart(ctx context.Context, bucket, object, uploadID
 		return pi, toObjectErr(err, minioMetaMultipartBucket, partPath)
 	}
 
-	go fs.backgroundAppend(ctx, bucket, object, uploadID)
+	//go fs.backgroundAppend(ctx, bucket, object, uploadID)
 
 	// gershon todo : stat should be replace by values returned from fsLink
 	fi, err := fsStatFile(ctx, partPath)
@@ -568,6 +706,7 @@ func (fs *FSObjects) ListObjectParts(ctx context.Context, bucket, object, upload
 // Implements S3 compatible Complete multipart API.
 func (fs *FSObjects) CompleteMultipartUpload(ctx context.Context, bucket string, object string, uploadID string, parts []CompletePart, opts ObjectOptions) (oi ObjectInfo, e error) {
 
+	logger.Info("CompleteMultipartUpload!")
 	var actualSize int64
 
 	if err := checkCompleteMultipartArgs(ctx, bucket, object, fs); err != nil {
@@ -684,23 +823,29 @@ func (fs *FSObjects) CompleteMultipartUpload(ctx context.Context, bucket string,
 	// 1. The last PutObjectPart triggers go-routine fs.backgroundAppend, this go-routine has not started yet.
 	// 2. Now CompleteMultipartUpload gets called which sees that lastPart is not appended and starts appending
 	//    from the beginning
-	fs.backgroundAppend(ctx, bucket, object, uploadID)
+	logger.Info("CompleteMultipartUpload! backgroundAppend")
+	//fs.backgroundAppend(ctx, bucket, object, uploadID)
 
 	fs.appendFileMapMu.Lock()
 	file := fs.appendFileMap[uploadID]
 	delete(fs.appendFileMap, uploadID)
 	fs.appendFileMapMu.Unlock()
 
+	logger.Info("CompleteMultipartUpload! after backgroundAppend")
 	if file != nil {
 		file.Lock()
 		defer file.Unlock()
 		// Verify that appendFile has all the parts.
+		logger.Info("len(file.parts): %d, len(parts): %d", len(file.parts), len(parts))
+
 		if len(file.parts) == len(parts) {
 			for i := range parts {
 				if parts[i].ETag != file.parts[i].ETag {
+					logger.Info("Etag fail: %d (%s != %s)", i, parts[i].ETag, file.parts[i].ETag)
 					break
 				}
 				if parts[i].PartNumber != file.parts[i].PartNumber {
+					logger.Info("Partnumber fail: %d (%s != %s)", i, parts[i].PartNumber, file.parts[i].PartNumber)
 					break
 				}
 				if i == len(parts)-1 {
@@ -709,9 +854,14 @@ func (fs *FSObjects) CompleteMultipartUpload(ctx context.Context, bucket string,
 				}
 			}
 		}
+
+
 	}
 
+	logger.Info("CompleteMultipartUpload! HUE")
+
 	if appendFallback {
+		logger.Info("HA! AppendFallback!")
 		if file != nil {
 			fsRemoveFile(ctx, file.filePath)
 		}

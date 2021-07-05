@@ -163,7 +163,7 @@ func (i infoMsg) pretty(msg string, args ...interface{}) {
 
 // Info :
 func Info(msg string, data ...interface{}) {
-	consoleLog(info, msg+"\n", data...)
+	consoleLog(info, time.Now().Format(time.RFC3339Nano) + ": " + msg+"\n", data...)
 }
 
 var startupMessage startUpMsg
