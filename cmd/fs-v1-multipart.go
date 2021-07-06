@@ -371,8 +371,6 @@ func (fs *FSObjects) PutObjectPart(ctx context.Context, bucket, object, uploadID
 		return pi, toObjectErr(err, minioMetaMultipartBucket, partPath)
 	}
 
-	go fs.backgroundAppend(ctx, bucket, object, uploadID)
-
 	// gershon todo : stat should be replace by values returned from fsLink
 	fi, err := fsStatFile(ctx, partPath)
 	if err != nil {
@@ -676,15 +674,7 @@ func (fs *FSObjects) CompleteMultipartUpload(ctx context.Context, bucket string,
 		}
 	}
 
-	appendFallback := true // In case background-append did not append the required parts.
 	appendFilePath := pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID, fmt.Sprintf("%s.%s", uploadID, mustGetUUID()))
-
-	// Most of the times appendFile would already be fully appended by now. We call fs.backgroundAppend()
-	// to take care of the following corner case:
-	// 1. The last PutObjectPart triggers go-routine fs.backgroundAppend, this go-routine has not started yet.
-	// 2. Now CompleteMultipartUpload gets called which sees that lastPart is not appended and starts appending
-	//    from the beginning
-	fs.backgroundAppend(ctx, bucket, object, uploadID)
 
 	fs.appendFileMapMu.Lock()
 	file := fs.appendFileMap[uploadID]
@@ -694,41 +684,22 @@ func (fs *FSObjects) CompleteMultipartUpload(ctx context.Context, bucket string,
 	if file != nil {
 		file.Lock()
 		defer file.Unlock()
-		// Verify that appendFile has all the parts.
-		if len(file.parts) == len(parts) {
-			for i := range parts {
-				if parts[i].ETag != file.parts[i].ETag {
-					break
-				}
-				if parts[i].PartNumber != file.parts[i].PartNumber {
-					break
-				}
-				if i == len(parts)-1 {
-					appendFilePath = file.filePath
-					appendFallback = false
-				}
-			}
-		}
+		fsRemoveFile(ctx, file.filePath)
 	}
 
-	if appendFallback {
-		if file != nil {
-			fsRemoveFile(ctx, file.filePath)
+	for _, part := range parts {
+		partFile := getPartFile(entriesTrie, part.PartNumber, part.ETag)
+		if partFile == "" {
+			logger.LogIf(ctx, fmt.Errorf("%.5d.%s missing will not proceed",
+				part.PartNumber, part.ETag))
+			return oi, InvalidPart{
+				PartNumber: part.PartNumber,
+				GotETag:    part.ETag,
+			}
 		}
-		for _, part := range parts {
-			partFile := getPartFile(entriesTrie, part.PartNumber, part.ETag)
-			if partFile == "" {
-				logger.LogIf(ctx, fmt.Errorf("%.5d.%s missing will not proceed",
-					part.PartNumber, part.ETag))
-				return oi, InvalidPart{
-					PartNumber: part.PartNumber,
-					GotETag:    part.ETag,
-				}
-			}
-			if err = mioutil.AppendFile(appendFilePath, pathJoin(uploadIDDir, partFile), globalFSOSync); err != nil {
-				logger.LogIf(ctx, err)
-				return oi, toObjectErr(err)
-			}
+		if err = mioutil.AppendFile(appendFilePath, pathJoin(uploadIDDir, partFile), globalFSOSync); err != nil {
+			logger.LogIf(ctx, err)
+			return oi, toObjectErr(err)
 		}
 	}
 
