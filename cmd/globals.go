@@ -295,6 +295,8 @@ var (
 	GlobalStaleUploadsExpiry = time.Hour * 1 // 1 hr.
 	// GlobalStaleUploadsCleanupInterval - Cleanup interval when the stale uploads cleanup is initiated.
 	GlobalStaleUploadsCleanupInterval = time.Hour * 1 // 1 hr.
+
+	globalETCDOnly bool
 )
 
 

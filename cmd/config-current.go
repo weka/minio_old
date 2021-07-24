@@ -377,14 +377,18 @@ func lookupConfigs(s config.Config, setDriveCount int) {
 		}
 	}
 
-	if etcdCfg.Enabled {
+	if !etcdCfg.Enabled && globalETCDOnly {
+		logger.Fatal(fmt.Errorf("etcd endpoints not provided"),   "etcd initialization failure")
+	}
+
+	if globalETCDOnly || etcdCfg.Enabled {
 		if globalEtcdClient == nil {
 			globalEtcdClient, err = etcd.New(etcdCfg)
 			if err != nil {
 				if globalIsGateway {
 					logger.FatalIf(err, "Unable to initialize etcd config")
 				} else {
-					logger.LogIf(ctx, fmt.Errorf("Unable to initialize etcd config: %w", err))
+					logger.FatalIf(err, "Unable to initialize etcd config: %w", err)
 				}
 			}
 		}
