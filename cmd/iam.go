@@ -475,6 +475,10 @@ func (sys *IAMSys) Init(ctx context.Context, objAPI ObjectLayer) {
 			continue
 		}
 
+		if globalETCDOnly && globalEtcdClient == nil{
+			logger.Fatal(fmt.Errorf("etcd endpoints not provided"),   "etcd initialization failure")
+		}
+
 		if globalEtcdClient != nil {
 			// ****  WARNING ****
 			// Migrating to encrypted backend on etcd should happen before initialization of
@@ -483,6 +487,7 @@ func (sys *IAMSys) Init(ctx context.Context, objAPI ObjectLayer) {
 				txnLk.Unlock()
 				logger.LogIf(ctx, fmt.Errorf("Unable to decrypt an encrypted ETCD backend for IAM users and policies: %w", err))
 				logger.LogIf(ctx, errors.New("IAM sub-system is partially initialized, some users may not be available"))
+				logger.Fatal(fmt.Errorf("etcd endpoints not provided"), "etcd availability failure")
 				return
 			}
 		}
