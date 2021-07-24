@@ -53,4 +53,5 @@ const (
 	EnvStaleUploadsExpiry = "MINIO_STALE_UPLOADS_EXPIRY"
 	EnvStaleUploadsCleanupInterval = "MINIO_STALE_UPLOADS_CLEANUP_INTERVAL"
 
+	EnvETCDOnly = "MINIO_ETCD_ONLY"
 )
