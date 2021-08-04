@@ -40,16 +40,12 @@ import (
 
 // gets replication config associated to a given bucket name.
 func getReplicationConfig(ctx context.Context, bucketName string) (rc *replication.Config, err error) {
-	if globalIsGateway {
-		objAPI := newObjectLayerFn()
-		if objAPI == nil {
-			return nil, errServerNotInitialized
-		}
-
-		return nil, BucketReplicationConfigNotFound{Bucket: bucketName}
+	objAPI := newObjectLayerFn()
+	if objAPI == nil {
+		return nil, errServerNotInitialized
 	}
 
-	return globalBucketMetadataSys.GetReplicationConfig(ctx, bucketName)
+	return nil, BucketReplicationConfigNotFound{Bucket: bucketName}
 }
 
 // validateReplicationDestination returns error if replication destination bucket missing or not configured
@@ -105,28 +101,7 @@ func mustReplicate(ctx context.Context, r *http.Request, bucket, object string, 
 
 // mustReplicater returns true if object meets replication criteria.
 func mustReplicater(ctx context.Context, bucket, object string, meta map[string]string, replStatus string) bool {
-	if globalIsGateway {
-		return false
-	}
-	if rs, ok := meta[xhttp.AmzBucketReplicationStatus]; ok {
-		replStatus = rs
-	}
-	if replication.StatusType(replStatus) == replication.Replica {
-		return false
-	}
-	cfg, err := getReplicationConfig(ctx, bucket)
-	if err != nil {
-		return false
-	}
-	opts := replication.ObjectOpts{
-		Name: object,
-		SSEC: crypto.SSEC.IsEncrypted(meta),
-	}
-	tagStr, ok := meta[xhttp.AmzObjectTagging]
-	if ok {
-		opts.UserTags = tagStr
-	}
-	return cfg.Replicate(opts)
+	return false
 }
 
 // returns true if any of the objects being deleted qualifies for replication.

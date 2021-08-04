@@ -34,15 +34,11 @@ type BucketQuotaSys struct {
 
 // Get - Get quota configuration.
 func (sys *BucketQuotaSys) Get(bucketName string) (*madmin.BucketQuota, error) {
-	if globalIsGateway {
-		objAPI := newObjectLayerFn()
-		if objAPI == nil {
-			return nil, errServerNotInitialized
-		}
-		return &madmin.BucketQuota{}, nil
+	objAPI := newObjectLayerFn()
+	if objAPI == nil {
+		return nil, errServerNotInitialized
 	}
-
-	return globalBucketMetadataSys.GetQuotaConfig(bucketName)
+	return &madmin.BucketQuota{}, nil
 }
 
 // NewBucketQuotaSys returns initialized BucketQuotaSys
@@ -106,11 +102,12 @@ func (sys *BucketQuotaSys) check(ctx context.Context, bucket string, size int64)
 }
 
 func enforceBucketQuota(ctx context.Context, bucket string, size int64) error {
-	if size < 0 {
-		return nil
-	}
+	//if size < 0 {
+	//	return nil
+	//}
+	//return globalBucketQuotaSys.check(ctx, bucket, size)
 
-	return globalBucketQuotaSys.check(ctx, bucket, size)
+	return nil
 }
 
 // enforceFIFOQuota deletes objects in FIFO order until sufficient objects

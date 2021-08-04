@@ -88,7 +88,7 @@ const (
 	GlobalServiceExecutionInterval = time.Hour * 24 // 24 hrs.
 
 	// Refresh interval to update in-memory iam config cache.
-	globalRefreshIAMInterval = 30 * time.Second
+	globalRefreshIAMInterval = 180 * time.Second
 
 	// Limit of location constraint XML for unauthenticted PUT bucket operations.
 	maxLocationConstraintSize = 3 * humanize.MiByte
