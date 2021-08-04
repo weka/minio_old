@@ -34,24 +34,12 @@ type BucketObjectLockSys struct{}
 
 // Get - Get retention configuration.
 func (sys *BucketObjectLockSys) Get(bucketName string) (r objectlock.Retention, err error) {
-	if globalIsGateway {
-		objAPI := newObjectLayerFn()
-		if objAPI == nil {
-			return r, errServerNotInitialized
-		}
-
-		return r, nil
+	objAPI := newObjectLayerFn()
+	if objAPI == nil {
+		return r, errServerNotInitialized
 	}
 
-	config, err := globalBucketMetadataSys.GetObjectLockConfig(bucketName)
-	if err != nil {
-		if _, ok := err.(BucketObjectLockConfigNotFound); ok {
-			return r, nil
-		}
-		return r, err
-
-	}
-	return config.ToRetention(), nil
+	return r, nil
 }
 
 // enforceRetentionForDeletion checks if it is appropriate to remove an

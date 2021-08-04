@@ -33,16 +33,12 @@ func NewBucketSSEConfigSys() *BucketSSEConfigSys {
 
 // Get - gets bucket encryption config for the given bucket.
 func (sys *BucketSSEConfigSys) Get(bucket string) (*bucketsse.BucketSSEConfig, error) {
-	if globalIsGateway {
-		objAPI := newObjectLayerFn()
-		if objAPI == nil {
-			return nil, errServerNotInitialized
-		}
-
-		return nil, BucketSSEConfigNotFound{Bucket: bucket}
+	objAPI := newObjectLayerFn()
+	if objAPI == nil {
+		return nil, errServerNotInitialized
 	}
 
-	return globalBucketMetadataSys.GetSSEConfig(bucket)
+	return nil, BucketSSEConfigNotFound{Bucket: bucket}
 }
 
 // validateBucketSSEConfig parses bucket encryption configuration and validates if it is supported by MinIO.

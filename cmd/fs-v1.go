@@ -1638,12 +1638,12 @@ func (fs *FSObjects) IsListenSupported() bool {
 
 // IsEncryptionSupported returns whether server side encryption is implemented for this layer.
 func (fs *FSObjects) IsEncryptionSupported() bool {
-	return true
+	return false
 }
 
 // IsCompressionSupported returns whether compression is applicable for this layer.
 func (fs *FSObjects) IsCompressionSupported() bool {
-	return true
+	return false
 }
 
 // IsTaggingSupported returns true, object tagging is supported in fs object layer.

@@ -275,13 +275,6 @@ func (sys *BucketTargetSys) Init(ctx context.Context, buckets []BucketInfo, objA
 		return errServerNotInitialized
 	}
 
-	// In gateway mode, bucket targets is not supported.
-	if globalIsGateway {
-		return nil
-	}
-
-	// Load bucket targets once during boot in background.
-	go sys.load(ctx, buckets, objAPI)
 	return nil
 }
 
