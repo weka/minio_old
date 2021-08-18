@@ -163,6 +163,7 @@ const (
 	ErrInvalidQuerySignatureAlgo
 	ErrInvalidQueryParams
 	ErrBucketAlreadyOwnedByYou
+	ErrBucketPathShouldExist
 	ErrInvalidDuration
 	ErrBucketAlreadyExists
 	ErrMetadataTooLarge

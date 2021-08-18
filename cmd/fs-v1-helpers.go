@@ -280,11 +280,20 @@ func fsStatVolume(ctx context.Context, volume string) (os.FileInfo, error) {
 		return nil, err
 	}
 
-	if !fi.IsDir() {
+	if fi.IsDir() {
 		return nil, errVolumeAccessDenied
 	}
 
-	return fi, nil
+	if fi.Mode() & os.ModeSymlink == os.ModeSymlink {
+		fil, err := fsStat(ctx, volume)
+		if err != nil {
+			if fil.IsDir() {
+				return nil, err
+			}
+		}
+	}
+
+	return nil, errVolumeAccessDenied
 }
 
 // Lookup if directory exists, returns directory attributes upon success.

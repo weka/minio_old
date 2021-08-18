@@ -415,8 +415,16 @@ func (fs *FSObjects) MakeBucketWithLocation(ctx context.Context, bucket string, 
 		return toObjectErr(err, bucket)
 	}
 
+	if opts.ExistingPath {
+		if _, err := os.Stat(bucketDir); os.IsNotExist(err) {
+			return toObjectErr(err, bucket)
+		}
+	}
+
 	if err = fsMkdir(ctx, bucketDir); err != nil {
-		return toObjectErr(err, bucket)
+		if opts.ExistingPath == false {
+			return toObjectErr(err, bucket)
+		}
 	}
 
 	meta := newBucketMetadata(bucket)
