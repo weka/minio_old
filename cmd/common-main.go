@@ -319,6 +319,10 @@ func handleCommonEnvVars() {
 		}
 	}
 
+	if env.IsSet(config.EnvDefaultFilesystemPath) {
+		globalDefaultFilesystemPath = env.Get(config.EnvDefaultFilesystemPath, "")
+	}
+
 	openid.GlobalSTSMinDuration = minimalExpirationInt
 
 	var crawlSleepPerFolder time.Duration

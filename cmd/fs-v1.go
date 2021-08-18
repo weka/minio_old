@@ -28,6 +28,7 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -393,6 +394,18 @@ func (fs *FSObjects) statBucketDir(ctx context.Context, bucket string) (os.FileI
 	return st, nil
 }
 
+func (fs *FSObjects) createBucketSymlink(bucket string, bucketDirPath string) error {
+	target := filepath.Join(bucketDirPath, bucket)
+	err := reliableMkdirAll(target, 0777)
+
+	if err != nil && !os.IsExist(err) {
+		return err
+	}
+
+	symlink := filepath.Join(fs.fsPath, bucket)
+	return os.Symlink(target, symlink)
+}
+
 // MakeBucketWithLocation - create a new bucket, returns if it already exists.
 func (fs *FSObjects) MakeBucketWithLocation(ctx context.Context, bucket string, opts BucketOptions) error {
 	if opts.LockEnabled || opts.VersioningEnabled {
@@ -410,13 +423,28 @@ func (fs *FSObjects) MakeBucketWithLocation(ctx context.Context, bucket string, 
 		atomic.AddInt64(&fs.activeIOCount, -1)
 	}()
 
+	if globalDefaultFilesystemPath != "" {
+		err := fs.createBucketSymlink(bucket, globalDefaultFilesystemPath)
+		if err != nil {
+			return toObjectErr(err, bucket)
+		}
+	}
+
 	bucketDir, err := fs.getBucketDir(ctx, bucket)
 	if err != nil {
 		return toObjectErr(err, bucket)
 	}
 
+	if opts.ExistingPath {
+		if _, err := os.Stat(bucketDir); os.IsNotExist(err) {
+			return toObjectErr(err, bucket)
+		}
+	}
+
 	if err = fsMkdir(ctx, bucketDir); err != nil {
-		return toObjectErr(err, bucket)
+		if opts.ExistingPath == false {
+			return toObjectErr(err, bucket)
+		}
 	}
 
 	meta := newBucketMetadata(bucket)

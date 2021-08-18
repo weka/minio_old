@@ -297,6 +297,8 @@ var (
 	GlobalStaleUploadsCleanupInterval = time.Hour * 1 // 1 hr.
 
 	globalETCDOnly bool
+
+	globalDefaultFilesystemPath = ""
 )
 
 
