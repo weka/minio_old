@@ -105,6 +105,12 @@ func configureServerHandler(endpointServerPools EndpointServerPools) (http.Handl
 	// Add server metrics router
 	registerMetricsRouter(router)
 
+	// Add upgrade router
+	registerUpgradeRouter(router)
+
+	// Add drain router
+	registerDrainRouter(router)
+
 	// Register web router when its enabled.
 	if globalBrowserEnabled {
 		if err := registerWebRouter(router); err != nil {
