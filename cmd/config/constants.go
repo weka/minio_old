@@ -44,6 +44,7 @@ const (
 
 	EnvIAMRefreshSecInterval = "MINIO_IAM_REFRESH_SEC_INTERVAL"
 	EnvSTSMinDuration = "MINIO_STS_MIN_DURATION"
+	EnvDefaultFilesystemPath = "DEFAULT_FILESYSTEM_PATH"
 
 	EnvCrawlSleepPerFolder = "MINIO_CRAWL_SLEEP_PER_FOLDER"
 	EnvCrawlStartDelay = "MINIO_CRAWL_START_DELAY"
@@ -53,4 +54,5 @@ const (
 	EnvStaleUploadsExpiry = "MINIO_STALE_UPLOADS_EXPIRY"
 	EnvStaleUploadsCleanupInterval = "MINIO_STALE_UPLOADS_CLEANUP_INTERVAL"
 
+	EnvETCDOnly = "MINIO_ETCD_ONLY"
 )

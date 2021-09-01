@@ -625,6 +625,16 @@ func (api objectAPIHandlers) PutBucketHandler(w http.ResponseWriter, r *http.Req
 		objectLockEnabled = v == "true"
 	}
 
+	existingPath := false
+	if vs, found := r.Header[http.CanonicalHeaderKey("x-weka-existing-path")]; found {
+		v := strings.ToLower(strings.Join(vs, ""))
+		if v != "true" && v != "false" {
+			writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrInvalidRequest), r.URL, guessIsBrowserReq(r))
+			return
+		}
+		existingPath = v == "true"
+	}
+
 	if s3Error := checkRequestAuthType(ctx, r, policy.CreateBucketAction, bucket, ""); s3Error != ErrNone {
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(s3Error), r.URL, guessIsBrowserReq(r))
 		return
@@ -647,6 +657,7 @@ func (api objectAPIHandlers) PutBucketHandler(w http.ResponseWriter, r *http.Req
 	opts := BucketOptions{
 		Location:    location,
 		LockEnabled: objectLockEnabled,
+		ExistingPath: existingPath,
 	}
 
 	if globalDNSConfig != nil {

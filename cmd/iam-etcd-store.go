@@ -661,6 +661,8 @@ func (ies *IAMEtcdStore) reloadFromEvent(sys *IAMSys, event *etcd.Event) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultContextTimeout)
 	defer cancel()
 
+	logger.Info("reloadFromEvent : %s", event)
+
 	switch {
 	case eventCreate:
 		switch {

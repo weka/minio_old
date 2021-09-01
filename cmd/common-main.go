@@ -241,6 +241,11 @@ func handleCommonEnvVars() {
 		logger.Fatal(config.ErrInvalidFSODirectValue(err), "Invalid MINIO_FS_ODIRECT value in environment variable")
 	}
 
+	globalETCDOnly, err = config.ParseBool(env.Get(config.EnvETCDOnly, config.EnableOff))
+	if err != nil {
+		logger.Fatal(config.ErrInvalidFSODirectValue(err), "Invalid MINIO_ETCD_ONLY value in environment variable")
+	}
+
 	domains := env.Get(config.EnvDomain, "")
 	if len(domains) != 0 {
 		for _, domainName := range strings.Split(domains, config.ValueSeparator) {
@@ -312,6 +317,10 @@ func handleCommonEnvVars() {
 		if err != nil || minimalExpirationInt <= 0 {
 			minimalExpirationInt = 900
 		}
+	}
+
+	if env.IsSet(config.EnvDefaultFilesystemPath) {
+		globalDefaultFilesystemPath = env.Get(config.EnvDefaultFilesystemPath, "")
 	}
 
 	openid.GlobalSTSMinDuration = minimalExpirationInt

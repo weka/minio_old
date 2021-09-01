@@ -190,7 +190,20 @@ func readDirN(dirPath string, count int) (entries []string, err error) {
 			typ = fi.Mode() & os.ModeType
 		}
 		if typ&os.ModeSymlink == os.ModeSymlink {
-			continue
+			target, err := os.Readlink(pathJoin(dirPath, string(name)))
+			if err != nil {
+				continue
+			}
+			fid, err := fsStat(nil, target)
+			if err != nil {
+				continue
+			} else {
+				if !fid.IsDir() {
+					continue
+				} else {
+					typ = fid.Mode()
+				}
+			}
 		}
 		if typ.IsRegular() {
 			entries = append(entries, string(name))
