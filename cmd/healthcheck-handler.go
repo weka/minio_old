@@ -19,6 +19,7 @@ package cmd
 import (
 	"context"
 	"net/http"
+	"os"
 	"strconv"
 
 	xhttp "github.com/minio/minio/cmd/http"
@@ -30,6 +31,11 @@ const unavailable = "offline"
 func ClusterCheckHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := newContext(r, w, "ClusterCheckHandler")
 
+	// if file exists - return
+	if _, err := os.Stat("/tmp/down"); os.IsNotExist(err) {
+		writeResponse(w, http.StatusServiceUnavailable, nil, mimeNone)
+		return
+	}
 	if shouldProxy() {
 		w.Header().Set(xhttp.MinIOServerStatus, unavailable)
 		writeResponse(w, http.StatusServiceUnavailable, nil, mimeNone)
