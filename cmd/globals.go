@@ -299,6 +299,10 @@ var (
 	globalETCDOnly bool
 
 	globalDefaultFilesystemPath = ""
+
+	globalUpgradeMode bool = false
+	globalDrainMode bool = false
+	globalDrainStatus int64 = 0
 )
 
 
