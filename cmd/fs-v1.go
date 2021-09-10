@@ -403,7 +403,12 @@ func (fs *FSObjects) createBucketSymlink(bucket string, bucketDirPath string) er
 	}
 
 	symlink := filepath.Join(fs.fsPath, bucket)
-	return os.Symlink(target, symlink)
+
+	if err := os.Symlink(target, symlink); os.IsExist(err) {
+		return BucketExists{}
+	}
+
+	return nil
 }
 
 // MakeBucketWithLocation - create a new bucket, returns if it already exists.
@@ -437,12 +442,6 @@ func (fs *FSObjects) MakeBucketWithLocation(ctx context.Context, bucket string, 
 
 	if opts.ExistingPath {
 		if _, err := os.Stat(bucketDir); os.IsNotExist(err) {
-			return toObjectErr(err, bucket)
-		}
-	}
-
-	if err = fsMkdir(ctx, bucketDir); err != nil {
-		if opts.ExistingPath == false {
 			return toObjectErr(err, bucket)
 		}
 	}
