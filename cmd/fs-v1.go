@@ -327,7 +327,7 @@ func (fs *FSObjects) crawlBucket(ctx context.Context, bucket string, cache dataU
 	// Load bucket info.
 	cache, err = crawlDataFolder(ctx, fs.fsPath, cache, globalBucketVersioningSys.Enabled(bucket), func(item crawlItem) (sizeSummary, error) {
 		bucket, object := item.bucket, item.objectPath()
-		fsMetaBytes, err := ioutil.ReadFile(pathJoin(fs.fsPath, minioMetaBucket, bucketMetaPrefix, bucket, object, fs.metaJSONFile))
+		fsMetaBytes, err := ioutil.ReadFile(pathJoin(fs.fsPath, bucket, minioMetaBucket, bucketMetaPrefix, bucket, object, fs.metaJSONFile))
 		if err != nil && !osIsNotExist(err) {
 			if intDataUpdateTracker.debug {
 				logger.Info(color.Green("crawlBucket:")+" object return unexpected error: %v/%v: %w", item.bucket, item.objectPath(), err)
@@ -437,12 +437,6 @@ func (fs *FSObjects) MakeBucketWithLocation(ctx context.Context, bucket string, 
 
 	if opts.ExistingPath {
 		if _, err := os.Stat(bucketDir); os.IsNotExist(err) {
-			return toObjectErr(err, bucket)
-		}
-	}
-
-	if err = fsMkdir(ctx, bucketDir); err != nil {
-		if opts.ExistingPath == false {
 			return toObjectErr(err, bucket)
 		}
 	}
@@ -605,7 +599,7 @@ func (fs *FSObjects) DeleteBucket(ctx context.Context, bucket string, forceDelet
 	}
 
 	// Cleanup all the bucket metadata.
-	minioMetadataBucketDir := pathJoin(fs.fsPath, minioMetaBucket, bucketMetaPrefix, bucket)
+	minioMetadataBucketDir := pathJoin(fs.fsPath, bucket, minioMetaBucket, bucketMetaPrefix, bucket)
 	if err = fsRemoveAll(ctx, minioMetadataBucketDir); err != nil {
 		return toObjectErr(err, bucket)
 	}
@@ -651,7 +645,7 @@ func (fs *FSObjects) CopyObject(ctx context.Context, srcBucket, srcObject, dstBu
 	}
 
 	if cpSrcDstSame && srcInfo.metadataOnly {
-		fsMetaPath := pathJoin(fs.fsPath, minioMetaBucket, bucketMetaPrefix, srcBucket, srcObject, fs.metaJSONFile)
+		fsMetaPath := pathJoin(fs.fsPath, srcBucket, minioMetaBucket, bucketMetaPrefix, srcBucket, srcObject, fs.metaJSONFile)
 		wlk, err := fs.rwPool.Write(fsMetaPath)
 		if err != nil {
 			wlk, err = fs.rwPool.Create(fsMetaPath)
@@ -755,7 +749,7 @@ func (fs *FSObjects) GetObjectNInfo(ctx context.Context, bucket, object string, 
 	// Take a rwPool lock for NFS gateway type deployment
 	rwPoolUnlocker := func() {}
 	if bucket != minioMetaBucket && lockType != noLock {
-		fsMetaPath := pathJoin(fs.fsPath, minioMetaBucket, bucketMetaPrefix, bucket, object, fs.metaJSONFile)
+		fsMetaPath := pathJoin(fs.fsPath, bucket, minioMetaBucket, bucketMetaPrefix, bucket, object, fs.metaJSONFile)
 		_, err = fs.rwPool.Open(fsMetaPath)
 		if err != nil && err != errFileNotFound {
 			logger.LogIf(ctx, err)
@@ -859,7 +853,7 @@ func (fs *FSObjects) getObject(ctx context.Context, bucket, object string, offse
 	}
 
 	if bucket != minioMetaBucket {
-		fsMetaPath := pathJoin(fs.fsPath, minioMetaBucket, bucketMetaPrefix, bucket, object, fs.metaJSONFile)
+		fsMetaPath := pathJoin(fs.fsPath, bucket, minioMetaBucket, bucketMetaPrefix, bucket, object, fs.metaJSONFile)
 		if lock {
 			_, err = fs.rwPool.Open(fsMetaPath)
 			if err != nil && err != errFileNotFound {
@@ -953,7 +947,7 @@ func (fs *FSObjects) getObjectInfoNoFSLock(ctx context.Context, bucket, object s
 		return fsMeta.ToObjectInfo(bucket, object, fi), nil
 	}
 
-	fsMetaPath := pathJoin(fs.fsPath, minioMetaBucket, bucketMetaPrefix, bucket, object, fs.metaJSONFile)
+	fsMetaPath := pathJoin(fs.fsPath, bucket, minioMetaBucket, bucketMetaPrefix, bucket, object, fs.metaJSONFile)
 	// Read `fs.json` to perhaps contend with
 	// parallel Put() operations.
 
@@ -1008,7 +1002,7 @@ func (fs *FSObjects) getObjectInfo(ctx context.Context, bucket, object string) (
 		return fsMeta.ToObjectInfo(bucket, object, fi), nil
 	}
 
-	fsMetaPath := pathJoin(fs.fsPath, minioMetaBucket, bucketMetaPrefix, bucket, object, fs.metaJSONFile)
+	fsMetaPath := pathJoin(fs.fsPath, bucket, minioMetaBucket, bucketMetaPrefix, bucket, object, fs.metaJSONFile)
 	// Read `fs.json` to perhaps contend with
 	// parallel Put() operations.
 
@@ -1089,7 +1083,7 @@ func (fs *FSObjects) GetObjectInfo(ctx context.Context, bucket, object string, o
 			return oi, toObjectErr(err, bucket, object)
 		}
 
-		fsMetaPath := pathJoin(fs.fsPath, minioMetaBucket, bucketMetaPrefix, bucket, object, fs.metaJSONFile)
+		fsMetaPath := pathJoin(fs.fsPath, bucket, minioMetaBucket, bucketMetaPrefix, bucket, object, fs.metaJSONFile)
 		err = fs.createFsJSON(object, fsMetaPath)
 		lk.Unlock()
 		if err != nil {
@@ -1199,7 +1193,7 @@ func (fs *FSObjects) putObject(ctx context.Context, bucket string, object string
 
 	var wlk *lock.LockedFile
 	if bucket != minioMetaBucket {
-		bucketMetaDir := pathJoin(fs.fsPath, minioMetaBucket, bucketMetaPrefix)
+		bucketMetaDir := pathJoin(fs.fsPath, bucket, minioMetaBucket, bucketMetaPrefix)
 		fsMetaPath := pathJoin(bucketMetaDir, bucket, object, fs.metaJSONFile)
 		wlk, err = fs.rwPool.Write(fsMetaPath)
 		var freshFile bool
@@ -1245,7 +1239,7 @@ func (fs *FSObjects) putObject(ctx context.Context, bucket string, object string
 	var file os.File
 
 	if GlobalFSOTmpfile {
-		fsTmpObjPath = pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID)
+		fsTmpObjPath = pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID)
 		bytesWritten, err, file = fsCreateAndGetFile(ctx, fsTmpObjPath, data, buf, data.Size())
 
 		if err != nil {
@@ -1254,7 +1248,7 @@ func (fs *FSObjects) putObject(ctx context.Context, bucket string, object string
 			}()
 		}
 	} else {
-		fsTmpObjPath = pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID, mustGetUUID())
+		fsTmpObjPath = pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID, mustGetUUID())
 		bytesWritten, err = fsCreateFile(ctx, fsTmpObjPath, data, buf, data.Size())
 	}
 
@@ -1366,7 +1360,7 @@ func (fs *FSObjects) DeleteObject(ctx context.Context, bucket, object string, op
 
 	var rwlk *lock.LockedFile
 
-	minioMetaBucketDir := pathJoin(fs.fsPath, minioMetaBucket)
+	minioMetaBucketDir := pathJoin(fs.fsPath, bucket, minioMetaBucket)
 	fsMetaPath := pathJoin(minioMetaBucketDir, bucketMetaPrefix, bucket, object, fs.metaJSONFile)
 	if bucket != minioMetaBucket {
 		rwlk, err = fs.rwPool.Write(fsMetaPath)
@@ -1444,7 +1438,7 @@ func (fs *FSObjects) isObjectDir(bucket, prefix string) bool {
 // getObjectETag is a helper function, which returns only the md5sum
 // of the file on the disk.
 func (fs *FSObjects) getObjectETag(ctx context.Context, bucket, entry string, lock bool) (string, error) {
-	fsMetaPath := pathJoin(fs.fsPath, minioMetaBucket, bucketMetaPrefix, bucket, entry, fs.metaJSONFile)
+	fsMetaPath := pathJoin(fs.fsPath, bucket, minioMetaBucket, bucketMetaPrefix, bucket, entry, fs.metaJSONFile)
 
 	var reader io.Reader
 	var fi os.FileInfo
@@ -1556,7 +1550,7 @@ func (fs *FSObjects) PutObjectTags(ctx context.Context, bucket, object string, t
 		}
 	}
 
-	fsMetaPath := pathJoin(fs.fsPath, minioMetaBucket, bucketMetaPrefix, bucket, object, fs.metaJSONFile)
+	fsMetaPath := pathJoin(fs.fsPath, bucket, minioMetaBucket, bucketMetaPrefix, bucket, object, fs.metaJSONFile)
 	fsMeta := fsMetaV1{}
 	wlk, err := fs.rwPool.Write(fsMetaPath)
 	if err != nil {
