@@ -37,7 +37,7 @@ func ClusterCheckHandler(w http.ResponseWriter, r *http.Request) {
 			writeResponse(w, http.StatusServiceUnavailable, nil, mimeNone)
 			return
 		} else {
-			break;
+			writeResponse(w, http.StatusOK, nil, mimeNone)
 		}
 	}
 	if shouldProxy() {
