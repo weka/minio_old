@@ -32,7 +32,7 @@ func ClusterCheckHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := newContext(r, w, "ClusterCheckHandler")
 
 	// if file exists - return
-	if _, err := os.Stat("/tmp/down"); os.IsNotExist(err) {
+	if err := os.Stat("/tmp/down"); os.IsNotExist(err) {
 		writeResponse(w, http.StatusServiceUnavailable, nil, mimeNone)
 		return
 	}
