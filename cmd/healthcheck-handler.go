@@ -34,12 +34,13 @@ func ClusterCheckHandler(w http.ResponseWriter, r *http.Request) {
 	if _, err := os.Stat("./tmp/down"); err != nil {
 		if os.IsNotExist(err) {
 			// file does not exist
+			w.Header().Set(xhttp.MinIOServerStatus, unavailable)
 			writeResponse(w, http.StatusServiceUnavailable, nil, mimeNone)
 			return
-		} else {
-			writeResponse(w, http.StatusOK, nil, mimeNone)
-			return
-		}
+		} 
+		//else {
+		//	writeResponse(w, http.StatusOK, nil, mimeNone)
+		//}
 	}
 	if shouldProxy() {
 		w.Header().Set(xhttp.MinIOServerStatus, unavailable)
