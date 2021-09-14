@@ -31,7 +31,7 @@ const unavailable = "offline"
 func ClusterCheckHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := newContext(r, w, "ClusterCheckHandler")
 
-	if _, err := os.Stat("./tmp/down"); err != nil {
+	if _, err := os.Stat("/tmp/down"); err != nil {
 		if os.IsNotExist(err) {
 			// file does not exist
 			w.Header().Set(xhttp.MinIOServerStatus, unavailable)
