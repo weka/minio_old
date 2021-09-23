@@ -1243,7 +1243,7 @@ func (fs *FSObjects) putObject(ctx context.Context, bucket string, object string
 	var file os.File
 
 	if GlobalFSOTmpfile {
-		fsTmpObjPath = pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID)
+		fsTmpObjPath = pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID)
 		bytesWritten, err, file = fsCreateAndGetFile(ctx, fsTmpObjPath, data, buf, data.Size())
 
 		if err != nil {
