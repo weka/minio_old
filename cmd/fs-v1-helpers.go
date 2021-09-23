@@ -438,7 +438,7 @@ func createFile(ctx context.Context, filePath string, reader io.Reader, buf []by
   
 	if getFile && GlobalFSOTmpfile {
 		flags = flags | os.O_WRONLY | unix.O_TMPFILE
-		writer, err = lock.Open(filePath, flags, 0666)
+		writer, err = lock.Open(pathutil.Dir(filePath), flags, 0666)
 		if err != nil {
 			return 0, osErrToFileErr(err), os.File {}
 		}
