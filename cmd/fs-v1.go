@@ -1219,7 +1219,7 @@ func (fs *FSObjects) putObject(ctx context.Context, bucket string, object string
 			// We should preserve the `fs.json` of any
 			// existing object
 			if retErr != nil && freshFile {
-				tmpDir := pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID)
+				tmpDir := pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID)
 				fsRemoveMeta(ctx, bucketMetaDir, fsMetaPath, tmpDir)
 			}
 		}()
@@ -1243,7 +1243,7 @@ func (fs *FSObjects) putObject(ctx context.Context, bucket string, object string
 	var file os.File
 
 	if GlobalFSOTmpfile {
-		fsTmpObjPath = pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID)
+		fsTmpObjPath = pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID)
 		bytesWritten, err, file = fsCreateAndGetFile(ctx, fsTmpObjPath, data, buf, data.Size())
 
 		if err != nil {
@@ -1252,7 +1252,7 @@ func (fs *FSObjects) putObject(ctx context.Context, bucket string, object string
 			}()
 		}
 	} else {
-		fsTmpObjPath = pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID, mustGetUUID())
+		fsTmpObjPath = pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID, mustGetUUID())
 		bytesWritten, err = fsCreateFile(ctx, fsTmpObjPath, data, buf, data.Size())
 	}
 

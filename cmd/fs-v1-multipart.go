@@ -37,7 +37,7 @@ import (
 
 // Returns EXPORT/.minio.sys/multipart/SHA256/UPLOADID
 func (fs *FSObjects) getUploadIDDir(bucket, object, uploadID string) string {
-	return pathJoin(fs.fsPath, minioMetaMultipartBucket, getSHA256Hash([]byte(pathJoin(bucket, object))), uploadID)
+	return pathJoin(fs.fsPath, bucket, minioMetaMultipartBucket, getSHA256Hash([]byte(pathJoin(bucket, object))), uploadID)
 }
 
 // Returns EXPORT/.minio.sys/multipart/SHA256
@@ -324,7 +324,7 @@ func (fs *FSObjects) PutObjectPart(ctx context.Context, bucket, object, uploadID
 	var tmpPartPath string
 
 	if GlobalFSOTmpfile {
-		tmpPartDir := pathJoin(fs.fsPath, minioMetaTmpBucket)
+		tmpPartDir := pathJoin(fs.fsPath, bucket, minioMetaTmpBucket)
 		bytesWritten, err, file = fsCreateAndGetFile(ctx, tmpPartDir, data, buf, data.Size())
 
 		if err != nil {
@@ -333,7 +333,7 @@ func (fs *FSObjects) PutObjectPart(ctx context.Context, bucket, object, uploadID
 			}()
 		}
 	} else {
-		tmpPartPath = pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID, uploadID+"."+mustGetUUID()+"."+strconv.Itoa(partID))
+		tmpPartPath = pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID, uploadID+"."+mustGetUUID()+"."+strconv.Itoa(partID))
 		bytesWritten, err = fsCreateFile(ctx, tmpPartPath, data, buf, data.Size())
 		defer fsRemoveFile(ctx, tmpPartPath)
 	}
