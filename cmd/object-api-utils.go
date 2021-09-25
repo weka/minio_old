@@ -17,12 +17,12 @@
 package cmd
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
 	"io"
-	"bufio"
 	"math/rand"
 	"net"
 	"net/http"

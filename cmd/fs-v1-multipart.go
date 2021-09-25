@@ -37,7 +37,7 @@ import (
 
 // Returns EXPORT/.minio.sys/multipart/SHA256/UPLOADID
 func (fs *FSObjects) getUploadIDDir(bucket, object, uploadID string) string {
-	return pathJoin(fs.fsPath, minioMetaMultipartBucket, getSHA256Hash([]byte(pathJoin(bucket, object))), uploadID)
+	return pathJoin(fs.fsPath, bucket, minioMetaMultipartBucket, getSHA256Hash([]byte(pathJoin(bucket, object))), uploadID)
 }
 
 // Returns EXPORT/.minio.sys/multipart/SHA256
@@ -74,7 +74,7 @@ func (fs *FSObjects) backgroundAppend(ctx context.Context, bucket, object, uploa
 	file := fs.appendFileMap[uploadID]
 	if file == nil {
 		file = &fsAppendFile{
-			filePath: pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID, fmt.Sprintf("%s.%s", uploadID, mustGetUUID())),
+			filePath: pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID, fmt.Sprintf("%s.%s", uploadID, mustGetUUID())),
 		}
 		fs.appendFileMap[uploadID] = file
 	}
@@ -324,7 +324,7 @@ func (fs *FSObjects) PutObjectPart(ctx context.Context, bucket, object, uploadID
 	var tmpPartPath string
 
 	if GlobalFSOTmpfile {
-		tmpPartDir := pathJoin(fs.fsPath, minioMetaTmpBucket)
+		tmpPartDir := pathJoin(fs.fsPath, bucket, minioMetaTmpBucket)
 		bytesWritten, err, file = fsCreateAndGetFile(ctx, tmpPartDir, data, buf, data.Size())
 
 		if err != nil {
@@ -333,7 +333,7 @@ func (fs *FSObjects) PutObjectPart(ctx context.Context, bucket, object, uploadID
 			}()
 		}
 	} else {
-		tmpPartPath = pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID, uploadID+"."+mustGetUUID()+"."+strconv.Itoa(partID))
+		tmpPartPath = pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID, uploadID+"."+mustGetUUID()+"."+strconv.Itoa(partID))
 		bytesWritten, err = fsCreateFile(ctx, tmpPartPath, data, buf, data.Size())
 		defer fsRemoveFile(ctx, tmpPartPath)
 	}
@@ -674,7 +674,8 @@ func (fs *FSObjects) CompleteMultipartUpload(ctx context.Context, bucket string,
 		}
 	}
 
-	appendFilePath := pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID, fmt.Sprintf("%s.%s", uploadID, mustGetUUID()))
+	//appendFilePath := pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID, fmt.Sprintf("%s.%s", uploadID, mustGetUUID()))
+	appendFilePath := pathJoin(uploadIDDir, fmt.Sprintf("%s.%s", uploadID, mustGetUUID()))
 
 	fs.appendFileMapMu.Lock()
 	file := fs.appendFileMap[uploadID]
@@ -734,7 +735,7 @@ func (fs *FSObjects) CompleteMultipartUpload(ctx context.Context, bucket string,
 		// We should preserve the `fs.json` of any
 		// existing object
 		if e != nil && freshFile {
-			tmpDir := pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID)
+			tmpDir := pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID)
 			fsRemoveMeta(ctx, bucketMetaDir, fsMetaPath, tmpDir)
 		}
 	}()
@@ -770,7 +771,7 @@ func (fs *FSObjects) CompleteMultipartUpload(ctx context.Context, bucket string,
 
 	// Purge multipart folders
 	{
-		fsTmpObjPath := pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID, mustGetUUID())
+		fsTmpObjPath := pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID, mustGetUUID())
 		defer fsRemoveAll(ctx, fsTmpObjPath) // remove multipart temporary files in background.
 
 		fsSimpleRenameFile(ctx, uploadIDDir, fsTmpObjPath)
@@ -829,7 +830,7 @@ func (fs *FSObjects) AbortMultipartUpload(ctx context.Context, bucket, object, u
 
 	// Purge multipart folders
 	{
-		fsTmpObjPath := pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID, mustGetUUID())
+		fsTmpObjPath := pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID, mustGetUUID())
 		defer fsRemoveAll(ctx, fsTmpObjPath) // remove multipart temporary files in background.
 
 		fsSimpleRenameFile(ctx, uploadIDDir, fsTmpObjPath)

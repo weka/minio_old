@@ -1242,8 +1242,8 @@ func (fs *FSObjects) putObject(ctx context.Context, bucket string, object string
 	var bytesWritten int64;
 	var file os.File
 
-	if GlobalFSOTmpfile {
-		fsTmpObjPath = pathJoin(fs.fsPath, minioMetaTmpBucket, fs.fsUUID)
+	if GlobalFSOTmpfile && bucket != minioMetaBucket {
+		fsTmpObjPath = pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID, "dummy")
 		bytesWritten, err, file = fsCreateAndGetFile(ctx, fsTmpObjPath, data, buf, data.Size())
 
 		if err != nil {
@@ -1270,7 +1270,7 @@ func (fs *FSObjects) putObject(ctx context.Context, bucket string, object string
 	// Entire object was written to the temp location, now it's safe to rename it to the actual location.
 	fsNSObjPath := pathJoin(fs.fsPath, bucket, object)
 
-	if GlobalFSOTmpfile {
+	if GlobalFSOTmpfile && bucket != minioMetaBucket{
 		if err = reliableMkdirAll(path.Dir(fsNSObjPath), 0777); err != nil {
 			return ObjectInfo{}, toObjectErr(err, bucket, object)
 		}
@@ -1290,7 +1290,7 @@ func (fs *FSObjects) putObject(ctx context.Context, bucket string, object string
 		}
 	}
 
-	if (GlobalFSOTmpfile) {
+	if GlobalFSOTmpfile && bucket != minioMetaBucket {
 		syscall.Fdatasync(int(file.Fd()))
 	}
 
@@ -1689,9 +1689,9 @@ func (fs *FSObjects) Health(ctx context.Context, opts HealthOptions) HealthResul
 
 func CheckIsFastFS(fsPath string) {
 	GlobalIsFastFS = true // set to true so ioctl won't fail immediately
-	if err := WekaDeleteFileFast(fsPath, ".fastfs.test"); err != nil {
+	if err := WekaDeleteFileFast("/mnt/weka", ".fastfs.test"); err != nil {
 		if errors.Is(err, unix.ENOTTY) || errors.Is(err, unix.ENOTSUP) {
-			GlobalIsFastFS = false
+			GlobalIsFastFS = true
 		}
 	}
 }
