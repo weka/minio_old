@@ -36,6 +36,7 @@ type Logger interface {
 }
 
 func consoleLog(console Logger, msg string, args ...interface{}) {
+	msg = time.Now().Format("2006-01-02 15:04:05") + ": " + msg
 	switch {
 	case jsonFlag:
 		// Strip escape control characters from json message
