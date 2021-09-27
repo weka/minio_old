@@ -1925,10 +1925,6 @@ func setDefaultCannedPolicies(policies map[string]iampolicy.Policy) {
 	if !ok {
 		policies["readwrite"] = iampolicy.ReadWrite
 	}
-	_, ok = policies["diagnostics"]
-	if !ok {
-		policies["diagnostics"] = iampolicy.AdminDiagnostics
-	}
 }
 
 // buildUserGroupMemberships - builds the memberships map. IMPORTANT:
