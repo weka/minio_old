@@ -668,7 +668,7 @@ func (api objectAPIHandlers) PutBucketHandler(w http.ResponseWriter, r *http.Req
 				}
 
 				if err = globalDNSConfig.Put(bucket); err != nil {
-					objectAPI.DeleteBucket(ctx, bucket, false)
+					objectAPI.DeleteBucket(ctx, bucket, false, false)
 					writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
 					return
 				}
@@ -1078,10 +1078,22 @@ func (api objectAPIHandlers) DeleteBucketHandler(w http.ResponseWriter, r *http.
 		}
 	}
 
+	unlinkBucket := false
+	if vs, found := r.Header[http.CanonicalHeaderKey("x-minio-unlink-bucket")]; found {
+		var err error
+		unlinkBucket, err = strconv.ParseBool(vs[0])
+		if err != nil {
+			apiErr := errorCodes.ToAPIErr(ErrInvalidRequest)
+			apiErr.Description = err.Error()
+			writeErrorResponse(ctx, w, apiErr, r.URL, guessIsBrowserReq(r))
+			return
+		}
+	}
+
 	deleteBucket := objectAPI.DeleteBucket
 
 	// Attempt to delete bucket.
-	if err := deleteBucket(ctx, bucket, forceDelete); err != nil {
+	if err := deleteBucket(ctx, bucket, forceDelete, unlinkBucket); err != nil {
 		if _, ok := err.(BucketNotEmpty); ok && (globalBucketVersioningSys.Enabled(bucket) || globalBucketVersioningSys.Suspended(bucket)) {
 			apiErr := toAPIError(ctx, err)
 			apiErr.Description = "The bucket you tried to delete is not empty. You must delete all versions in the bucket."

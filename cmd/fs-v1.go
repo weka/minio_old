@@ -575,7 +575,7 @@ func (fs *FSObjects) ListBuckets(ctx context.Context) ([]BucketInfo, error) {
 
 // DeleteBucket - delete a bucket and all the metadata associated
 // with the bucket including pending multipart, object metadata.
-func (fs *FSObjects) DeleteBucket(ctx context.Context, bucket string, forceDelete bool) error {
+func (fs *FSObjects) DeleteBucket(ctx context.Context, bucket string, forceDelete bool, unlinkBucket bool) error {
 	atomic.AddInt64(&fs.activeIOCount, 1)
 	defer func() {
 		atomic.AddInt64(&fs.activeIOCount, -1)
@@ -586,20 +586,34 @@ func (fs *FSObjects) DeleteBucket(ctx context.Context, bucket string, forceDelet
 		return toObjectErr(err, bucket)
 	}
 
+	realBucketDir := ""
+
+	if !unlinkBucket {
+		realBucketDir, err := os.Readlink(bucketDir)
+		if err == nil {
+			bucketDir = realBucketDir
+		}
+	}
+
 	if !forceDelete {
 		// Attempt to delete regular bucket.
-		if err = fsRemoveDir(ctx, bucketDir); err != nil {
+		if err = fsRemoveDir(ctx, realBucketDir); err != nil {
 			return toObjectErr(err, bucket)
 		}
 	} else {
 		tmpBucketPath := pathJoin(fs.fsPath, minioMetaTmpBucket, bucket+"."+mustGetUUID())
-		if err = fsSimpleRenameFile(ctx, bucketDir, tmpBucketPath); err != nil {
+		if err = fsSimpleRenameFile(ctx, realBucketDir, tmpBucketPath); err != nil {
 			return toObjectErr(err, bucket)
 		}
 
 		go func() {
 			fsRemoveAll(ctx, tmpBucketPath) // ignore returned error if any.
 		}()
+	}
+
+	// delete the link
+	if err = fsRemoveDir(ctx, bucketDir); err != nil {
+		return toObjectErr(err, bucket)
 	}
 
 	// Cleanup all the bucket metadata.
