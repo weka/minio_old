@@ -575,7 +575,7 @@ func (fs *FSObjects) ListBuckets(ctx context.Context) ([]BucketInfo, error) {
 
 // DeleteBucket - delete a bucket and all the metadata associated
 // with the bucket including pending multipart, object metadata.
-func (fs *FSObjects) DeleteBucket(ctx context.Context, bucket string, forceDelete bool) error {
+func (fs *FSObjects) DeleteBucket(ctx context.Context, bucket string, forceDelete bool, unlinkBucket bool) error {
 	atomic.AddInt64(&fs.activeIOCount, 1)
 	defer func() {
 		atomic.AddInt64(&fs.activeIOCount, -1)
@@ -586,20 +586,37 @@ func (fs *FSObjects) DeleteBucket(ctx context.Context, bucket string, forceDelet
 		return toObjectErr(err, bucket)
 	}
 
-	if !forceDelete {
-		// Attempt to delete regular bucket.
-		if err = fsRemoveDir(ctx, bucketDir); err != nil {
-			return toObjectErr(err, bucket)
-		}
-	} else {
-		tmpBucketPath := pathJoin(fs.fsPath, minioMetaTmpBucket, bucket+"."+mustGetUUID())
-		if err = fsSimpleRenameFile(ctx, bucketDir, tmpBucketPath); err != nil {
+	if !unlinkBucket {
+		// get the real bucket directory - which is the directory the symlink point to
+		symlink := bucketDir
+		if bucketDir, err = os.Readlink(bucketDir); err != nil {
 			return toObjectErr(err, bucket)
 		}
 
-		go func() {
-			fsRemoveAll(ctx, tmpBucketPath) // ignore returned error if any.
-		}()
+		if !forceDelete {
+			// Attempt to delete regular bucket.
+			if err = fsRemoveDir(ctx, bucketDir); err != nil {
+				return toObjectErr(err, bucket)
+			}
+		} else {
+			tmpBucketPath := pathJoin(fs.fsPath, minioMetaTmpBucket, bucket+"."+mustGetUUID())
+			if err = fsSimpleRenameFile(ctx, bucketDir, tmpBucketPath); err != nil {
+				return toObjectErr(err, bucket)
+			}
+
+			go func() {
+				fsRemoveAll(ctx, tmpBucketPath) // ignore returned error if any.
+			}()
+		}
+
+		if err = fsRemoveFile(ctx, symlink); err != nil {
+			return toObjectErr(err, bucket)
+		}
+	} else {
+		// just remove the link
+		if err = fsRemoveFile(ctx, bucketDir); err != nil {
+			return toObjectErr(err, bucket)
+		}
 	}
 
 	// Cleanup all the bucket metadata.
