@@ -567,7 +567,8 @@ func (fs *FSObjects) ListObjectParts(ctx context.Context, bucket, object, upload
 func (fs *FSObjects) CompleteMultipartUpload(ctx context.Context, bucket string, object string, uploadID string, parts []CompletePart, opts ObjectOptions) (oi ObjectInfo, e error) {
 
 	var actualSize int64
-
+	fmt.Println("CompleteMultipartUpload entry: " + time.Now().Format("15:04:05.000000"))
+	defer fmt.Println("CompleteMultipartUpload exit: " + time.Now().Format("15:04:05.000000"))
 	if err := checkCompleteMultipartArgs(ctx, bucket, object, fs); err != nil {
 		return oi, toObjectErr(err)
 	}

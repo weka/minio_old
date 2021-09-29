@@ -706,6 +706,7 @@ func (fs *FSObjects) GetObjectNInfo(ctx context.Context, bucket, object string, 
 			VersionID: opts.VersionID,
 		}
 	}
+	fmt.Println("GetObjectNInfo entry: " + time.Now().Format("15:04:05.000000"))
 	if err = checkGetObjArgs(ctx, bucket, object); err != nil {
 		return nil, err
 	}
@@ -741,6 +742,7 @@ func (fs *FSObjects) GetObjectNInfo(ctx context.Context, bucket, object string, 
 	// Otherwise we get the object info
 	var objInfo ObjectInfo
 	if objInfo, err = fs.getObjectInfo(ctx, bucket, object); err != nil {
+		fmt.Println("GetObjectNInfo key not found: " + time.Now().Format("15:04:05.000000"))
 		nsUnlocker()
 		return nil, toObjectErr(err, bucket, object)
 	}
