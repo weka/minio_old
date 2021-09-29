@@ -1034,9 +1034,9 @@ func (z *erasureServerPools) IsTaggingSupported() bool {
 // DeleteBucket - deletes a bucket on all serverPools simultaneously,
 // even if one of the serverPools fail to delete buckets, we proceed to
 // undo a successful operation.
-func (z *erasureServerPools) DeleteBucket(ctx context.Context, bucket string, forceDelete bool) error {
+func (z *erasureServerPools) DeleteBucket(ctx context.Context, bucket string, forceDelete bool, unlinkBucket bool) error {
 	if z.SingleZone() {
-		return z.serverPools[0].DeleteBucket(ctx, bucket, forceDelete)
+		return z.serverPools[0].DeleteBucket(ctx, bucket, forceDelete, false)
 	}
 	g := errgroup.WithNErrs(len(z.serverPools))
 
@@ -1044,7 +1044,7 @@ func (z *erasureServerPools) DeleteBucket(ctx context.Context, bucket string, fo
 	for index := range z.serverPools {
 		index := index
 		g.Go(func() error {
-			return z.serverPools[index].DeleteBucket(ctx, bucket, forceDelete)
+			return z.serverPools[index].DeleteBucket(ctx, bucket, forceDelete, false)
 		}, index)
 	}
 

@@ -156,7 +156,7 @@ func deleteDanglingBucket(ctx context.Context, storageDisks []StorageAPI, dErrs 
 }
 
 // DeleteBucket - deletes a bucket.
-func (er erasureObjects) DeleteBucket(ctx context.Context, bucket string, forceDelete bool) error {
+func (er erasureObjects) DeleteBucket(ctx context.Context, bucket string, forceDelete bool, unlinkBucket bool) error {
 	// Collect if all disks report volume not found.
 	defer ObjectPathUpdated(bucket + slashSeparator)
 	storageDisks := er.getDisks()
