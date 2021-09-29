@@ -626,8 +626,8 @@ func (api objectAPIHandlers) PutBucketHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	existingPath := ""
-	if vs, found := r.Header[http.CanonicalHeaderKey("x-weka-existing-path")]; found {
-		existingPath = strings.ToLower(strings.Join(vs, ""))
+	if existingHeaderParamValues, found := r.Header[http.CanonicalHeaderKey("x-weka-existing-path")]; found {
+		existingPath = existingHeaderParamValues[0]
 	}
 
 	if s3Error := checkRequestAuthType(ctx, r, policy.CreateBucketAction, bucket, ""); s3Error != ErrNone {
