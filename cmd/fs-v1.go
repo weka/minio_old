@@ -757,7 +757,9 @@ func (fs *FSObjects) GetObjectNInfo(ctx context.Context, bucket, object string, 
 			VersionID: opts.VersionID,
 		}
 	}
+	fmt.Println("GetObjectNInfo entry: " + time.Now().Format("15:04:05.000000"))
 	if err = checkGetObjArgs(ctx, bucket, object); err != nil {
+		fmt.Println("GetObjectNInfo: checkGetObjArgs failed: " + time.Now().Format("15:04:05.000000"))
 		return nil, err
 	}
 
@@ -767,6 +769,7 @@ func (fs *FSObjects) GetObjectNInfo(ctx context.Context, bucket, object string, 
 	}()
 
 	if _, err = fs.statBucketDir(ctx, bucket); err != nil {
+		fmt.Println("GetObjectNInfo: statBucketDir failed: " + time.Now().Format("15:04:05.000000"))
 		return nil, toObjectErr(err, bucket)
 	}
 
@@ -792,6 +795,7 @@ func (fs *FSObjects) GetObjectNInfo(ctx context.Context, bucket, object string, 
 	// Otherwise we get the object info
 	var objInfo ObjectInfo
 	if objInfo, err = fs.getObjectInfo(ctx, bucket, object); err != nil {
+		fmt.Println("GetObjectNInfo key not found: " + time.Now().Format("15:04:05.000000"))
 		nsUnlocker()
 		return nil, toObjectErr(err, bucket, object)
 	}
@@ -827,6 +831,7 @@ func (fs *FSObjects) GetObjectNInfo(ctx context.Context, bucket, object string, 
 	if err != nil {
 		rwPoolUnlocker()
 		nsUnlocker()
+		fmt.Println("GetObjectNInfo: fsOpenFile failed: " + time.Now().Format("15:04:05.000000"))
 		return nil, toObjectErr(err, bucket, object)
 	}
 	reader := io.LimitReader(readCloser, length)
