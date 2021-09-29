@@ -289,7 +289,7 @@ func (n *hdfsObjects) hdfsPathJoin(args ...string) string {
 	return minio.PathJoin(append([]string{n.subPath, hdfsSeparator}, args...)...)
 }
 
-func (n *hdfsObjects) DeleteBucket(ctx context.Context, bucket string, forceDelete bool) error {
+func (n *hdfsObjects) DeleteBucket(ctx context.Context, bucket string, forceDelete bool, unlinkBucket bool) error {
 	if !hdfsIsValidBucketName(bucket) {
 		return minio.BucketNameInvalid{Bucket: bucket}
 	}
