@@ -207,7 +207,7 @@ func (web *webAPIHandlers) MakeBucket(r *http.Request, args *MakeBucketArgs, rep
 				}
 
 				if err = globalDNSConfig.Put(args.BucketName); err != nil {
-					objectAPI.DeleteBucket(ctx, args.BucketName, false)
+					objectAPI.DeleteBucket(ctx, args.BucketName, false, false)
 					return toJSONError(ctx, err)
 				}
 
@@ -294,7 +294,7 @@ func (web *webAPIHandlers) DeleteBucket(r *http.Request, args *RemoveBucketArgs,
 
 	deleteBucket := objectAPI.DeleteBucket
 
-	if err := deleteBucket(ctx, args.BucketName, false); err != nil {
+	if err := deleteBucket(ctx, args.BucketName, false, false); err != nil {
 		return toJSONError(ctx, err, args.BucketName)
 	}
 
