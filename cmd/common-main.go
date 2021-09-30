@@ -323,6 +323,10 @@ func handleCommonEnvVars() {
 		globalDefaultFilesystemPath = env.Get(config.EnvDefaultFilesystemPath, "")
 	}
 
+	if env.IsSet(config.EnvWekaAccessSecret) {
+		globalWekaAccessSecret = env.Get(config.EnvWekaAccessSecret, "")
+	}
+
 	openid.GlobalSTSMinDuration = minimalExpirationInt
 
 	var crawlSleepPerFolder time.Duration

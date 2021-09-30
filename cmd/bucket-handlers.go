@@ -626,8 +626,12 @@ func (api objectAPIHandlers) PutBucketHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	existingPath := ""
-	if vs, found := r.Header[http.CanonicalHeaderKey("x-weka-existing-path")]; found {
-		existingPath = strings.ToLower(strings.Join(vs, ""))
+
+	if existingHeaderParamValues, found := r.Header[http.CanonicalHeaderKey("x-weka-existing-path")]; found {
+		if err := authenticatelLocalWekaAcces(r); err != ErrNone {
+			writeErrorResponse(ctx, w, errorCodes.ToAPIErr(err), r.URL, guessIsBrowserReq(r))
+		}
+		existingPath = existingHeaderParamValues[0]
 	}
 
 	if s3Error := checkRequestAuthType(ctx, r, policy.CreateBucketAction, bucket, ""); s3Error != ErrNone {
@@ -1080,6 +1084,10 @@ func (api objectAPIHandlers) DeleteBucketHandler(w http.ResponseWriter, r *http.
 
 	unlinkBucket := false
 	if _, found := r.Header[http.CanonicalHeaderKey("x-weka-unlink-bucket")]; found {
+		if err := authenticatelLocalWekaAcces(r); err != ErrNone {
+			writeErrorResponse(ctx, w, errorCodes.ToAPIErr(err), r.URL, guessIsBrowserReq(r))
+		}
+
 		unlinkBucket = true
 	}
 
