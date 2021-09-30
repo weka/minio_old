@@ -20,6 +20,7 @@ import (
 	"crypto/x509"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -303,6 +304,8 @@ var (
 	globalUpgradeMode bool = false
 	globalDrainMode bool = false
 	globalDrainStatus int64 = 0
+
+	globalWekaAccessSecret string = ""
 )
 
 
@@ -317,4 +320,19 @@ func getGlobalInfo() (globalInfo map[string]interface{}) {
 	}
 
 	return globalInfo
+}
+
+func authenticatelLocalWekaAcces(r *http.Request) (s3Error APIErrorCode){
+	var host = strings.Split(r.Host, ":")[0]
+	if host != "127.0.0.1" && host != "localhost" {
+		return ErrAccessDenied
+	}
+
+	if secrets, found := r.Header[http.CanonicalHeaderKey("x-weka-access-secret")]; found {
+		if secrets[0] == globalWekaAccessSecret {
+			return ErrNone
+		}
+	}
+
+	return ErrAccessDenied
 }

@@ -626,7 +626,11 @@ func (api objectAPIHandlers) PutBucketHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	existingPath := ""
+
 	if existingHeaderParamValues, found := r.Header[http.CanonicalHeaderKey("x-weka-existing-path")]; found {
+		if err := authenticatelLocalWekaAcces(r); err != ErrNone {
+			writeErrorResponse(ctx, w, errorCodes.ToAPIErr(err), r.URL, guessIsBrowserReq(r))
+		}
 		existingPath = existingHeaderParamValues[0]
 	}
 
@@ -1080,6 +1084,10 @@ func (api objectAPIHandlers) DeleteBucketHandler(w http.ResponseWriter, r *http.
 
 	unlinkBucket := false
 	if _, found := r.Header[http.CanonicalHeaderKey("x-weka-unlink-bucket")]; found {
+		if err := authenticatelLocalWekaAcces(r); err != ErrNone {
+			writeErrorResponse(ctx, w, errorCodes.ToAPIErr(err), r.URL, guessIsBrowserReq(r))
+		}
+
 		unlinkBucket = true
 	}
 
