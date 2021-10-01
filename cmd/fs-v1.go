@@ -594,6 +594,12 @@ func (fs *FSObjects) DeleteBucket(ctx context.Context, bucket string, forceDelet
 		}
 
 		if !forceDelete {
+			// first thing we do is delete the tmp directory so it doesn't cause a BucketNotEmpty error
+			tmpBucketPath := pathJoin(fs.fsPath, bucket, minioMetaTmpBucket)
+			if err = fsRemoveDir(ctx, tmpBucketPath); err != nil {
+				return toObjectErr(err, bucket)
+			}
+
 			// Attempt to delete regular bucket.
 			if err = fsRemoveDir(ctx, bucketDir); err != nil {
 				return toObjectErr(err, bucket)
