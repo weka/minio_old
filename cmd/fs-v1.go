@@ -573,6 +573,35 @@ func (fs *FSObjects) ListBuckets(ctx context.Context) ([]BucketInfo, error) {
 	return bucketInfos, nil
 }
 
+// if the bucket is empty, we expect to find a single directory : the tmp sub-directory
+func (fs *FSObjects) isBucketEmpty(bucket string) (bool, error) {
+	f, err := os.Open(bucket)
+	if err != nil {
+		return false, err
+	}
+
+	fileInfo, err := f.Readdir(2)
+	f.Close()
+
+	if err != nil && err != io.EOF {
+		return false, err
+	}
+
+	// we expect exactly 1 result, which is the temp directory
+	if len(fileInfo) == 1 {
+		return true, nil
+	}
+
+	for _, file := range fileInfo {
+		logger.Info(file.Name())
+		if file.Name() != minioMetaBucket {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
 // DeleteBucket - delete a bucket and all the metadata associated
 // with the bucket including pending multipart, object metadata.
 func (fs *FSObjects) DeleteBucket(ctx context.Context, bucket string, forceDelete bool, unlinkBucket bool) error {
@@ -593,7 +622,12 @@ func (fs *FSObjects) DeleteBucket(ctx context.Context, bucket string, forceDelet
 			return toObjectErr(err, bucket)
 		}
 
-		if !forceDelete {
+		bucketEmpty, err := fs.isBucketEmpty(bucketDir)
+		if err != nil {
+			return toObjectErr(err, bucket)
+		}
+
+		if !forceDelete && !bucketEmpty {
 			// Attempt to delete regular bucket.
 			if err = fsRemoveDir(ctx, bucketDir); err != nil {
 				return toObjectErr(err, bucket)
