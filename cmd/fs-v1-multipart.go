@@ -771,8 +771,12 @@ func (fs *FSObjects) CompleteMultipartUpload(ctx context.Context, bucket string,
 
 	// Purge multipart folders
 	{
-		fsTmpObjPath := pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID, mustGetUUID())
+		fsTmpObjDirPath := pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID)
+		fsTmpObjPath := pathJoin(fsTmpObjDirPath, mustGetUUID())
 		defer fsRemoveAll(ctx, fsTmpObjPath) // remove multipart temporary files in background.
+
+		// weka - Create a temp directory for the meta data
+		os.MkdirAll(fsTmpObjDirPath, 0777)
 
 		fsSimpleRenameFile(ctx, uploadIDDir, fsTmpObjPath)
 
