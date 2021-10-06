@@ -898,6 +898,7 @@ func (fs *FSObjects) getObject(ctx context.Context, bucket, object string, offse
 
 	// Read the object, doesn't exist returns an s3 compatible error.
 	fsObjPath := pathJoin(fs.fsPath, bucket, object)
+
 	reader, size, err := fsOpenFile(ctx, fsObjPath, offset)
 	if err != nil {
 		return toObjectErr(err, bucket, object)
@@ -1307,9 +1308,7 @@ func (fs *FSObjects) putObject(ctx context.Context, bucket string, object string
 		}
 	}
 
-	if GlobalFSOTmpfile && bucket != minioMetaBucket {
-		syscall.Fdatasync(int(file.Fd()))
-	}
+	syscall.Sync()
 
 	// Stat the file to fetch timestamp, size.
 	fi, err := fsStatFile(ctx, pathJoin(fs.fsPath, bucket, object))

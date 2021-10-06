@@ -27,6 +27,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
@@ -769,10 +770,15 @@ func (fs *FSObjects) CompleteMultipartUpload(ctx context.Context, bucket string,
 		return oi, toObjectErr(err, bucket, object)
 	}
 
+	syscall.Sync()
+
 	// Purge multipart folders
 	{
 		fsTmpObjPath := pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID, mustGetUUID())
 		defer fsRemoveAll(ctx, fsTmpObjPath) // remove multipart temporary files in background.
+
+		// weka - Create a temp directory for the meta data
+		os.MkdirAll(pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID), 0777)
 
 		fsSimpleRenameFile(ctx, uploadIDDir, fsTmpObjPath)
 
