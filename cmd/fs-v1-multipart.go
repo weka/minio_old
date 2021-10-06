@@ -674,7 +674,6 @@ func (fs *FSObjects) CompleteMultipartUpload(ctx context.Context, bucket string,
 		}
 	}
 
-	//appendFilePath := pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID, fmt.Sprintf("%s.%s", uploadID, mustGetUUID()))
 	appendFilePath := pathJoin(uploadIDDir, fmt.Sprintf("%s.%s", uploadID, mustGetUUID()))
 
 	fs.appendFileMapMu.Lock()
@@ -774,6 +773,8 @@ func (fs *FSObjects) CompleteMultipartUpload(ctx context.Context, bucket string,
 		fsTmpObjPath := pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID, mustGetUUID())
 		defer fsRemoveAll(ctx, fsTmpObjPath) // remove multipart temporary files in background.
 
+		// weka - Create a temp directory for the meta data
+		os.MkdirAll(pathJoin(fs.fsPath, bucket, minioMetaTmpBucket, fs.fsUUID), 0777)
 		fsSimpleRenameFile(ctx, uploadIDDir, fsTmpObjPath)
 
 		// It is safe to ignore any directory not empty error (in case there were multiple uploadIDs on the same object)
