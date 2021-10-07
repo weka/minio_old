@@ -26,6 +26,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/user"
 	"path"
 	//"path/filepath"
@@ -827,12 +828,20 @@ func (fs *FSObjects) GetObjectNInfo(ctx context.Context, bucket, object string, 
 
 	// Read the object, doesn't exist returns an s3 compatible error.
 	fsObjPath := pathJoin(fs.fsPath, bucket, object)
+
 	readCloser, size, err := fsOpenFile(ctx, fsObjPath, off)
 	if err != nil {
-		rwPoolUnlocker()
-		nsUnlocker()
-		fmt.Println("GetObjectNInfo: fsOpenFile failed: " + time.Now().Format("15:04:05.000000"))
-		return nil, toObjectErr(err, bucket, object)
+		fmt.Println("GetObjectNInfo: fsOpenFile failed. Clearing caches: " + time.Now().Format("15:04:05.000000"))
+		cmd := exec.Command("bash", "-c", "echo 3 > /proc/sys/vm/drop_caches")
+		cmd.Run()
+		readCloser, size, err = fsOpenFile(ctx, fsObjPath, off)
+		if err != nil {
+			fmt.Println("GetObjectNInfo: fsOpenFile failed: " + time.Now().Format("15:04:05.000000"))
+			rwPoolUnlocker()
+			nsUnlocker()
+
+			return nil, toObjectErr(err, bucket, object)
+		}
 	}
 	reader := io.LimitReader(readCloser, length)
 	closeFn := func() {
