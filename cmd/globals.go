@@ -304,6 +304,7 @@ var (
 	globalUpgradeMode bool = false
 	globalDrainMode bool = false
 	globalDrainStatus int64 = 0
+	globalEtcdStatus string
 
 	globalWekaAccessSecret string = ""
 )
