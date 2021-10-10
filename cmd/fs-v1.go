@@ -825,6 +825,16 @@ func (fs *FSObjects) GetObjectNInfo(ctx context.Context, bucket, object string, 
 	fsObjPath := pathJoin(fs.fsPath, bucket, object)
 	readCloser, size, err := fsOpenFile(ctx, fsObjPath, off)
 	if err != nil {
+		b := []byte("3")
+		fmt.Println("GetObjectNInfo: fsOpenFile failed: " + time.Now().Format("15:04:05.000000"))
+		err = os.WriteFile("/proc/sys/vm/drop_caches", b, 644)
+		if err != nil {
+			fmt.Println("GetObjectNInfo: Write to drop_caches failed: " + time.Now().Format("15:04:05.000000"))
+			fmt.Println(err)
+		}
+		readCloser, size, err = fsOpenFile(ctx, fsObjPath, off)
+	}
+	if err != nil {
 		rwPoolUnlocker()
 		nsUnlocker()
 		return nil, toObjectErr(err, bucket, object)
