@@ -22,17 +22,14 @@ import (
 )
 
 const (
-	drainPath	= SlashSeparator + "drain"
-	drainModePath	= SlashSeparator + "mode"
-	drainStatusPath	= SlashSeparator + "status"
-	drainModePathPrefix    = minioReservedBucketPath + drainPath
+	etcdPath	= SlashSeparator + "etcd"
+	etcdVersionPath	= SlashSeparator + "version"
+	etcdVersionPathPrefix    = minioReservedBucketPath + etcdPath
 )
 
-func registerDrainRouter(router *mux.Router) {
-	drainRouter := router.PathPrefix(drainModePathPrefix).Subrouter()
+func registerEtcdVersionRouter(router *mux.Router) {
+	etcdRouter := router.PathPrefix(etcdVersionPathPrefix).Subrouter()
 
 	// Readiness handler
-	drainRouter.Methods(http.MethodPut).Path(drainModePath).HandlerFunc(httpTraceAll(drainModePutHandler))
-	drainRouter.Methods(http.MethodGet).Path(drainModePath).HandlerFunc(httpTraceAll(drainModeGetHandler))
-	drainRouter.Methods(http.MethodGet).Path(drainStatusPath).HandlerFunc(httpTraceAll(drainStatusGetHandler))
+	etcdRouter.Methods(http.MethodGet).Path(etcdVersionPath).HandlerFunc(httpTraceAll(etcdVersionGetHandler))
 }
