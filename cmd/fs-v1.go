@@ -114,6 +114,14 @@ func initMetaVolumeFS(fsPath, fsUUID string) error {
 		return err
 	}
 
+	//var b []byte
+	//b = append(b, 3)
+	//fmt.Println("GetObjectNInfo: fsOpenFile failed: " + time.Now().Format("15:04:05.000000"))
+	//err := os.WriteFile("/proc/sys/vm/drop_caches", b, 644)
+	//if err != nil {
+	//	fmt.Println("GetObjectNInfo: Write to drop_caches failed: " + time.Now().Format("15:04:05.000000"))
+	//}
+
 	metaMultipartPath := pathJoin(fsPath, minioMetaMultipartBucket)
 	return os.MkdirAll(metaMultipartPath, 0777)
 
@@ -826,12 +834,14 @@ func (fs *FSObjects) GetObjectNInfo(ctx context.Context, bucket, object string, 
 	readCloser, size, err := fsOpenFile(ctx, fsObjPath, off)
 	if err != nil {
 		var b []byte
-		b = append(b, 3)
-		fmt.Println("GetObjectNInfo: fsOpenFile failed: " + time.Now().Format("15:04:05.000000"))
-		err = os.WriteFile("/proc/sys/vm/drop_caches", b, 644)
-		if err != nil {
-			fmt.Println("GetObjectNInfo: Write to drop_caches failed: " + time.Now().Format("15:04:05.000000"))
-		}
+		//b = append(b, 3)
+		b = append(b, 30, 31, 32)
+		fmt.Println("GetObjectNInfo: fsOpenFile failed zzz: " + time.Now().Format("15:04:05.000000"))
+		//err = os.WriteFile("/proc/sys/vm/drop_caches", b, 644)
+		//err = os.WriteFile("/data/log/ddd", b, 644)
+		//if err != nil {
+		//	fmt.Println("GetObjectNInfo: Write to drop_caches failed: " + time.Now().Format("15:04:05.000000"))
+		//}
 		readCloser, size, err = fsOpenFile(ctx, fsObjPath, off)
 	}
 	if err != nil {
