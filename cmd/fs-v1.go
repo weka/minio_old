@@ -748,6 +748,13 @@ func (fs *FSObjects) GetObjectNInfo(ctx context.Context, bucket, object string, 
 	fsObjPath := pathJoin(fs.fsPath, bucket, object)
 	readCloser, size, err := fsOpenFile(ctx, fsObjPath, off)
 	if err != nil {
+		// weka - drop caches and retry, see WEKAPP-229177
+		b := []byte("3")
+		err = os.WriteFile("/proc/sys/vm/drop_caches", b, 644)
+		logger.LogIf(ctx, err, logger.Application)
+		readCloser, size, err = fsOpenFile(ctx, fsObjPath, off)
+	}
+	if err != nil {
 		rwPoolUnlocker()
 		nsUnlocker()
 		return nil, toObjectErr(err, bucket, object)
