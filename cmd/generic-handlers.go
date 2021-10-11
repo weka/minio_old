@@ -265,11 +265,11 @@ func guessIsDrainReq(req *http.Request) bool {
 	return strings.HasPrefix(req.URL.Path, drainModePathPrefix)
 }
 
-func guessIsEtcdStatusReq(req *http.Request) bool {
+func guessIsEtcdVersionReq(req *http.Request) bool {
 	if req == nil {
 		return false
 	}
-	return strings.HasPrefix(req.URL.Path, etcdStatusPathPrefix)
+	return strings.HasPrefix(req.URL.Path, etcdVersionPathPrefix)
 }
 
 // guessIsMetricsReq - returns true if incoming request looks
@@ -364,7 +364,7 @@ func setReservedBucketHandler(h http.Handler) http.Handler {
 
 func (h minioReservedBucketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
-	case guessIsRPCReq(r), guessIsBrowserReq(r), guessIsHealthCheckReq(r), guessIsMetricsReq(r), guessIsUpgradeReq(r), guessIsDrainReq(r), guessIsEtcdStatusReq(r),isAdminReq(r):
+	case guessIsRPCReq(r), guessIsBrowserReq(r), guessIsHealthCheckReq(r), guessIsMetricsReq(r), guessIsUpgradeReq(r), guessIsDrainReq(r), guessIsEtcdVersionReq(r),isAdminReq(r):
 		// Allow access to reserved buckets
 	default:
 		// For all other requests reject access to reserved buckets

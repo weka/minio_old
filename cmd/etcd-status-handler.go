@@ -17,10 +17,14 @@
 package cmd
 
 import (
-	"fmt"
 	"net/http"
 )
+type EtcdVersion struct {
+	CreateRevision int64 `json:"create_revision"`
+	ModRevision int64 `json:"mod_revision"`
+	Version int64 `json:"version"`
+}
 
-func etcdStatusGetHandler(w http.ResponseWriter, r *http.Request) {
-	writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Status':'%s'}", globalEtcdStatus)), mimeNone)
+func etcdVersionGetHandler(w http.ResponseWriter, r *http.Request) {
+	writeResponse(w, http.StatusOK, encodeResponseJSON(globalEtcdVersion), mimeNone)
 }

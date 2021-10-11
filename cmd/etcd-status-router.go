@@ -23,13 +23,13 @@ import (
 
 const (
 	etcdPath	= SlashSeparator + "etcd"
-	etcdStatusPath	= SlashSeparator + "status"
-	etcdStatusPathPrefix    = minioReservedBucketPath + etcdPath
+	etcdVersionPath	= SlashSeparator + "version"
+	etcdVersionPathPrefix    = minioReservedBucketPath + etcdPath
 )
 
-func registerEtcdStatusRouter(router *mux.Router) {
-	etcdRouter := router.PathPrefix(etcdStatusPathPrefix).Subrouter()
+func registerEtcdVersionRouter(router *mux.Router) {
+	etcdRouter := router.PathPrefix(etcdVersionPathPrefix).Subrouter()
 
 	// Readiness handler
-	etcdRouter.Methods(http.MethodGet).Path(etcdStatusPath).HandlerFunc(httpTraceAll(etcdStatusGetHandler))
+	etcdRouter.Methods(http.MethodGet).Path(etcdVersionPath).HandlerFunc(httpTraceAll(etcdVersionGetHandler))
 }
