@@ -17,10 +17,22 @@
 package cmd
 
 import (
-	"fmt"
 	"net/http"
 )
-
+type EtcdVersion struct {
+	CreateRevision int64 `json:"create_revision"`
+	ModRevision int64 `json:"mod_revision"`
+	Version int64 `json:"version"`
+}
 func etcdStatusGetHandler(w http.ResponseWriter, r *http.Request) {
-	writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Status':'%s'}", globalEtcdStatus)), mimeNone)
+	//writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Current version':'%s'}", globalEtcdStatus)), mimeNone)
+
+
+
+	//status := DrainStatus{
+	//	Mode: strconv.FormatBool(globalDrainMode),
+	//	Status: strconv.FormatInt(globalDrainStatus, 10),
+	//}
+
+	writeResponse(w, http.StatusOK, encodeResponseJSON(globalEtcdStatus), mimeNone)
 }

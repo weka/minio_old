@@ -663,12 +663,15 @@ func (ies *IAMEtcdStore) reloadFromEvent(sys *IAMSys, event *etcd.Event) {
 
 	logger.Info("reloadFromEvent : %s", event)
 	logger.Info("create_revision is %s", event.Kv.CreateRevision)
-	logger.Info("mod_revision is %s", event.Kv.ModRevision)
+	logger.Info("mod_revision is %t", event.Kv.ModRevision)
 	logger.Info("version is %s", event.Kv.Version)
 
-	globalEtcdStatus = "changing in iam"
-	//globalEtcdStatus = ""
-
+	//globalEtcdStatus = "{}"
+	globalEtcdStatus = EtcdVersion {
+		CreateRevision: event.Kv.CreateRevision,
+		ModRevision: event.Kv.ModRevision,
+		Version: event.Kv.Version,
+	}
 	switch {
 	case eventCreate:
 		switch {
