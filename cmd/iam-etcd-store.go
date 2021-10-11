@@ -661,13 +661,13 @@ func (ies *IAMEtcdStore) reloadFromEvent(sys *IAMSys, event *etcd.Event) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultContextTimeout)
 	defer cancel()
 
-	logger.Info("reloadFromEvent : %s", event)
-	logger.Info("create_revision is %s", event.Kv.CreateRevision)
-	logger.Info("mod_revision is %s", event.Kv.ModRevision)
-	logger.Info("version is %s", event.Kv.Version)
+	globalEtcdVersion = EtcdVersion {
+		CreateRevision: event.Kv.CreateRevision,
+		ModRevision: event.Kv.ModRevision,
+		Version: event.Kv.Version,
+	}
 
-	globalEtcdStatus = "changing in iam"
-	//globalEtcdStatus = ""
+	logger.Info("reloadFromEvent : etcd version is : %s", encodeResponseJSON(globalEtcdVersion))
 
 	switch {
 	case eventCreate:
