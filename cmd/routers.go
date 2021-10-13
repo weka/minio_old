@@ -111,6 +111,9 @@ func configureServerHandler(endpointServerPools EndpointServerPools) (http.Handl
 	// Add drain router
 	registerDrainRouter(router)
 
+	// Add etcd status router
+	registerEtcdVersionRouter(router)
+
 	// Register web router when its enabled.
 	if globalBrowserEnabled {
 		if err := registerWebRouter(router); err != nil {
