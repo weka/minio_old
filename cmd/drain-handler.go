@@ -23,7 +23,7 @@ import (
 	"time"
 )
 
-lastCall := time.Now()
+int lastCall := time.Now()
 
 func drainModePutHandler(w http.ResponseWriter, r *http.Request) {
 	drainMode, _ := strconv.ParseBool(r.URL.Query().Get("value"))
@@ -47,7 +47,7 @@ func drainStatusGetHandler(w http.ResponseWriter, r *http.Request) {
 
 	status := DrainStatus{
 		Mode: strconv.FormatBool(GlobalDrainMode),
-		currentCall := time.Now()
+		currentCall :=, time.Now()
                 Complete: currentCall - lastCall >= 5
 	}
 
