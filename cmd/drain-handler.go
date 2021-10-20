@@ -47,7 +47,7 @@ func drainStatusGetHandler(w http.ResponseWriter, r *http.Request) {
 
 	status := DrainStatus{
 		Mode: strconv.FormatBool(GlobalDrainMode),
-		currentCall :=, time.Now()
+		currentCall := time.Now(),
                 Complete: currentCall - lastCall >= 5
 	}
 
