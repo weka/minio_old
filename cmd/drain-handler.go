@@ -23,32 +23,36 @@ import (
 	"time"
 )
 
-int lastCall := time.Now()
+var (
+	minDrainTime = time.Duration(5)
+	lastCallTime = time.Now()
+)
 
 func drainModePutHandler(w http.ResponseWriter, r *http.Request) {
 	drainMode, _ := strconv.ParseBool(r.URL.Query().Get("value"))
 	globalDrainMode = drainMode
 	if drainMode {
-		lastCall = time.Now()
+		lastCallTime = time.Now()
 	}
 
-        writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Mode':'%t'}", globalDrainMode)), mimeNone)
+	writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Mode':'%t'}", globalDrainMode)), mimeNone)
  }
 
 func drainModeGetHandler(w http.ResponseWriter, r *http.Request) {
-	writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Mode':'%t'}", GlobalDrainMode)), mimeNone)
+	writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Mode':'%t'}", globalDrainMode)), mimeNone)
 }
 
 func drainStatusGetHandler(w http.ResponseWriter, r *http.Request) {
 	type DrainStatus struct {
 		Mode string `json:"mode"`
-               Complete bool `json:"complete"`
+        Complete string `json:"complete"`
 	}
+	current := time.Now
+	diff := current().Sub(lastCallTime)
 
 	status := DrainStatus{
-		Mode: strconv.FormatBool(GlobalDrainMode),
-		currentCall := time.Now(),
-                Complete: currentCall - lastCall >= 5
+		Mode: strconv.FormatBool(globalDrainMode),
+		Complete: strconv.FormatBool(diff > minDrainTime),
 	}
 
 	writeResponse(w, http.StatusOK, encodeResponseJSON(status), mimeNone)
