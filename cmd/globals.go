@@ -300,9 +300,9 @@ var (
 
 	globalDefaultFilesystemPath = ""
 
-	globalUpgradeMode bool = false
-	globalDrainMode bool = false
-	globalDrainStatus int64 = 0
+	GlobalUpgradeMode bool = false
+	GlobalDrainMode bool = false
+	GlobalDrainStatus int64 = 0
 )
 
 

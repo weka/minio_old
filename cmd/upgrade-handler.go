@@ -24,10 +24,10 @@ import (
 
 func upgradeModePutHandler(w http.ResponseWriter, r *http.Request) {
 	upgradeMode, _ := strconv.ParseBool(r.URL.Query().Get("value"))
-	globalUpgradeMode = upgradeMode
+	GlobalUpgradeMode = upgradeMode
 	writeResponse(w, http.StatusOK, nil, mimeNone)
 }
 
 func upgradeModeGetHandler(w http.ResponseWriter, r *http.Request) {
-	writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Mode':'%t'}", globalUpgradeMode)), mimeNone)
+	writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Mode':'%t'}", GlobalUpgradeMode)), mimeNone)
 }

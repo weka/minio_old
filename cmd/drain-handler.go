@@ -24,12 +24,12 @@ import (
 
 func drainModePutHandler(w http.ResponseWriter, r *http.Request) {
 	drainMode, _ := strconv.ParseBool(r.URL.Query().Get("value"))
-	globalDrainMode = drainMode
-	writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Mode':'%t'}", globalDrainMode)), mimeNone)
+	GlobalDrainMode = drainMode
+	writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Mode':'%t'}", GlobalDrainMode)), mimeNone)
 }
 
 func drainModeGetHandler(w http.ResponseWriter, r *http.Request) {
-	writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Mode':'%t'}", globalDrainMode)), mimeNone)
+	writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Mode':'%t'}", GlobalDrainMode)), mimeNone)
 }
 
 func drainStatusGetHandler(w http.ResponseWriter, r *http.Request) {
@@ -39,8 +39,8 @@ func drainStatusGetHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status := DrainStatus{
-		Mode: strconv.FormatBool(globalDrainMode),
-		Status: strconv.FormatInt(globalDrainStatus, 10),
+		Mode: strconv.FormatBool(GlobalDrainMode),
+		Status: strconv.FormatInt(GlobalDrainStatus, 10),
 	}
 
 	writeResponse(w, http.StatusOK, encodeResponseJSON(status), mimeNone)

@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/minio/minio/cmd/http/wekahook"
 	"net/http"
 	"strings"
 	"time"
@@ -551,8 +552,14 @@ func setHTTPStatsHandler(h http.Handler) http.Handler {
 func (h httpStatsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Meters s3 connection stats.
 	meteredRequest := &stats.IncomingTrafficMeter{ReadCloser: r.Body}
-	meteredResponse := &stats.OutgoingTrafficMeter{ResponseWriter: w}
-
+	var  meteredResponse *stats.OutgoingTrafficMeter
+	useWekaHook := true
+	if useWekaHook {   
+		wekaHook := wekahook.WResponseWriter{ResponseWriter: w, UpgradeMode: &GlobalUpgradeMode}
+		meteredResponse = &stats.OutgoingTrafficMeter{ResponseWriter: wekaHook}
+	} else {
+		meteredResponse = &stats.OutgoingTrafficMeter{ResponseWriter: w}
+	}
 	// Execute the request
 	r.Body = meteredRequest
 	h.handler.ServeHTTP(meteredResponse, r)
