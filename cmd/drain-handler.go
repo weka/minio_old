@@ -23,7 +23,7 @@ import (
 	"time"
 )
 
-int lastCall := time.Now()
+var lastCall := time.Now()
 
 func drainModePutHandler(w http.ResponseWriter, r *http.Request) {
 	drainMode, _ := strconv.ParseBool(r.URL.Query().Get("value"))
