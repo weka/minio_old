@@ -20,15 +20,16 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 )
 
-int lastCall = now()
+lastCall := time.Now()
 
 func drainModePutHandler(w http.ResponseWriter, r *http.Request) {
 	drainMode, _ := strconv.ParseBool(r.URL.Query().Get("value"))
 	globalDrainMode = drainMode
 	if drainMode {
-		lastCall = now()
+		lastCall = time.Now()
 	}
 
         writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Mode':'%t'}", globalDrainMode)), mimeNone)
@@ -46,7 +47,8 @@ func drainStatusGetHandler(w http.ResponseWriter, r *http.Request) {
 
 	status := DrainStatus{
 		Mode: strconv.FormatBool(GlobalDrainMode),
-                Complete: now() - lastCall() >= 5,
+		currentCall := time.Now()
+                Complete: currentCall - lastCall >= 5
 	}
 
 	writeResponse(w, http.StatusOK, encodeResponseJSON(status), mimeNone)
