@@ -66,12 +66,13 @@ func ClusterCheckHandler(w http.ResponseWriter, r *http.Request) {
 
 // ReadinessCheckHandler Checks if the process is up. Always returns success.
 func ReadinessCheckHandler(w http.ResponseWriter, r *http.Request) {
-	if shouldProxy() {
+	if shouldProxy() || globalDrainMode {
 		// Service not initialized yet
 		w.Header().Set(xhttp.MinIOServerStatus, unavailable)
+		writeResponse(w, http.StatusUpgradeRequired, nil, mimeNone)
+	} else {
+		writeResponse(w, http.StatusOK, nil, mimeNone)
 	}
-
-	writeResponse(w, http.StatusOK, nil, mimeNone)
 }
 
 // LivenessCheckHandler - Checks if the process is up. Always returns success.
@@ -79,7 +80,9 @@ func LivenessCheckHandler(w http.ResponseWriter, r *http.Request) {
 	if shouldProxy() || globalDrainMode {
 		// Service not initialized yet
 		w.Header().Set(xhttp.MinIOServerStatus, unavailable)
+		writeResponse(w, http.StatusUpgradeRequired, nil, mimeNone)
+	} else {
+		writeResponse(w, http.StatusOK, nil, mimeNone)
 	}
-	writeResponse(w, http.StatusOK, nil, mimeNone)
 }
 
