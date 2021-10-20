@@ -76,7 +76,7 @@ func ReadinessCheckHandler(w http.ResponseWriter, r *http.Request) {
 
 // LivenessCheckHandler - Checks if the process is up. Always returns success.
 func LivenessCheckHandler(w http.ResponseWriter, r *http.Request) {
-	if shouldProxy() {
+	if shouldProxy() || globalDrainMode {
 		// Service not initialized yet
 		w.Header().Set(xhttp.MinIOServerStatus, unavailable)
 	}

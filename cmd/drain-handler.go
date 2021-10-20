@@ -22,11 +22,17 @@ import (
 	"strconv"
 )
 
+int lastCall = now()
+
 func drainModePutHandler(w http.ResponseWriter, r *http.Request) {
 	drainMode, _ := strconv.ParseBool(r.URL.Query().Get("value"))
-	GlobalDrainMode = drainMode
-	writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Mode':'%t'}", GlobalDrainMode)), mimeNone)
-}
+	globalDrainMode = drainMode
+	if drainMode {
+		lastCall = now()
+	}
+
+        writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Mode':'%t'}", globalDrainMode)), mimeNone)
+ }
 
 func drainModeGetHandler(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, http.StatusOK, []byte(fmt.Sprintf("{'Mode':'%t'}", GlobalDrainMode)), mimeNone)
@@ -35,13 +41,14 @@ func drainModeGetHandler(w http.ResponseWriter, r *http.Request) {
 func drainStatusGetHandler(w http.ResponseWriter, r *http.Request) {
 	type DrainStatus struct {
 		Mode string `json:"mode"`
-		Status string `json:"status"`
+               Complete bool `json:"complete"`
 	}
 
 	status := DrainStatus{
 		Mode: strconv.FormatBool(GlobalDrainMode),
-		Status: strconv.FormatInt(GlobalDrainStatus, 10),
+                Complete: now() - lastCall() >= 5,
 	}
 
 	writeResponse(w, http.StatusOK, encodeResponseJSON(status), mimeNone)
 }
+
