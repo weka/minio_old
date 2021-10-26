@@ -180,6 +180,14 @@ func (fsi *fsIOPool) Create(path string) (wlk *lock.LockedFile, err error) {
 
 	// Attempt to create the file.
 	wlk, err = lock.LockedOpenFile(path, os.O_RDWR|os.O_CREATE, 0666)
+
+	// weka - if we get ENOENT, clear the caches and retry, see WEKAPP-229177
+	if err != nil && isSysErrPathNotFound(err) {
+		b := []byte("3")
+		err = os.WriteFile("/proc/sys/vm/drop_caches", b, 644)
+		logger.LogIf(GlobalContext, err)
+		wlk, err = lock.LockedOpenFile(path, os.O_RDWR|os.O_CREATE, 0666)
+	}
 	if err != nil {
 		switch {
 		case osIsPermission(err):
