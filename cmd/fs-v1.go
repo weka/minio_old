@@ -415,6 +415,28 @@ func (fs *FSObjects) MakeBucketWithLocation(ctx context.Context, bucket string, 
 		return BucketNameInvalid{Bucket: bucket}
 	}
 
+	fLockBucketCountName := "bucketCountLock"
+	fsFLockBucketCountPath := pathJoin(fs.fsPath, minioMetaBucket, fLockBucketCountName)
+
+	//File Lock Creation
+	_, err := fs.rwPool.Open(fsFLockBucketCountPath)
+	if err != nil {
+		wlk, err := fs.rwPool.Create(fsFLockBucketCountPath)
+		wlk.Close()
+		_, err = fs.rwPool.Open(fsFLockBucketCountPath)
+		if err != nil {
+			defer fs.rwPool.Close(fsFLockBucketCountPath)
+			return errFileNotFound
+		}
+	}
+	defer fs.rwPool.Close(fsFLockBucketCountPath)
+
+	// Check for max_buckets limitation0
+	buckets, _ := fs.ListBuckets(ctx)
+	if len(buckets) >= int(globalMaxBucketsLimit) {
+		return BucketCountLimitExceeded{Bucket: bucket}
+	}
+
 	defer ObjectPathUpdated(bucket + slashSeparator)
 	atomic.AddInt64(&fs.activeIOCount, 1)
 	defer func() {
