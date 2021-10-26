@@ -415,6 +415,47 @@ func (fs *FSObjects) MakeBucketWithLocation(ctx context.Context, bucket string, 
 		return BucketNameInvalid{Bucket: bucket}
 	}
 
+	// check if the bucket count will increase the maximum allowed.
+
+	//Move to a global space
+	fLockBucketCountName := "bucketCountLock"
+	fsFLockBucketCountPath := pathJoin(fs.fsPath, minioMetaBucket, fLockBucketCountName)
+
+	//Move to system uptime
+	//wlk, err := fs.rwPool.Create(fsFLockBucketCountPath)
+	//wlk.Close()
+
+	//Optional File Creation + Opening
+	//rlk, err := fs.rwPool.Open(fsFLockBucketCountPath)
+	//if err != nil {
+	//	wlk, err := fs.rwPool.Create(fsFLockBucketCountPath)
+	//	wlk.Close()
+	//	rlk, err := fs.rwPool.Open(fsFLockBucketCountPath)
+	//	if err != nil {
+	//		return errFileNotFound
+	//	}
+	//}
+
+
+	rlk, err := fs.rwPool.Open(fsFLockBucketCountPath)
+	if err != nil {
+		return errFileNotFound
+	}
+
+	defer rlk.Close()
+
+	//*lock.RLockedFile
+
+	buckets, _ := fs.ListBuckets(ctx)
+
+	if len(buckets) + 1 > int(globalMaxBucketsLimit) {
+		//printf("BLAA")
+		//return toJSONError(ctx, errBucketAlreadyExists)
+		return BucketCountLimitExceeded{Bucket: bucket}
+
+		//return toObjectErr(errBucketAlreadyExists, bucket)
+	}
+
 	defer ObjectPathUpdated(bucket + slashSeparator)
 	atomic.AddInt64(&fs.activeIOCount, 1)
 	defer func() {

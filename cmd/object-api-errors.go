@@ -241,6 +241,13 @@ func (e BucketAlreadyExists) Error() string {
 	return "The requested bucket name is not available. The bucket namespace is shared by all users of the system. Please select a different name and try again."
 }
 
+// BucketCountLimitExceeded exceed amount of allowed buckets.
+type BucketCountLimitExceeded GenericError
+
+func (e BucketCountLimitExceeded) Error() string {
+	return "Bucket count exceed the amount of allowed buckets"
+}
+
 // BucketAlreadyOwnedByYou already owned by you.
 type BucketAlreadyOwnedByYou GenericError
 

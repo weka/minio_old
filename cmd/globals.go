@@ -307,6 +307,8 @@ var (
 	globalEtcdVersion EtcdVersion
 
 	globalWekaAccessSecret string = ""
+
+	globalMaxBucketsLimit uint64 = 2000
 )
 
 
