@@ -56,4 +56,6 @@ const (
 	EnvStaleUploadsCleanupInterval = "MINIO_STALE_UPLOADS_CLEANUP_INTERVAL"
 
 	EnvETCDOnly = "MINIO_ETCD_ONLY"
+
+	EnvMaxBucketsLimit = "MAX_BUCKETS_LIMIT"
 )

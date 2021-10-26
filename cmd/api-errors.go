@@ -166,6 +166,7 @@ const (
 	ErrBucketPathShouldExist
 	ErrInvalidDuration
 	ErrBucketAlreadyExists
+	ErrBucketCountLimitExceeded
 	ErrMetadataTooLarge
 	ErrUnsupportedMetadata
 	ErrMaximumExpires
@@ -639,6 +640,11 @@ var errorCodes = errorCodeMap{
 		Code:           "BucketAlreadyExists",
 		Description:    "The requested bucket name is not available. The bucket namespace is shared by all users of the system. Please select a different name and try again.",
 		HTTPStatusCode: http.StatusConflict,
+	},
+	ErrBucketCountLimitExceeded: {
+		Code:           "BucketCountLimitExceeded",
+		Description:    "The requested bucket cannot be created due to bucket count limitation.",
+		HTTPStatusCode: http.StatusForbidden,
 	},
 	ErrAllAccessDisabled: {
 		Code:           "AllAccessDisabled",
@@ -1887,6 +1893,8 @@ func toAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
 		apiErr = ErrBucketNotEmpty
 	case BucketAlreadyExists:
 		apiErr = ErrBucketAlreadyExists
+	case BucketCountLimitExceeded:
+		apiErr = ErrBucketCountLimitExceeded
 	case BucketExists:
 		apiErr = ErrBucketAlreadyOwnedByYou
 	case ObjectNotFound:

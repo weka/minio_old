@@ -319,6 +319,10 @@ func handleCommonEnvVars() {
 		}
 	}
 
+	if env.IsSet(config.EnvMaxBucketsLimit) {
+		globalMaxBucketsLimit, _ = strconv.ParseUint(env.Get(config.EnvMaxBucketsLimit, ""), 10, 64)
+	}
+
 	if env.IsSet(config.EnvDefaultFilesystemPath) {
 		globalDefaultFilesystemPath = env.Get(config.EnvDefaultFilesystemPath, "")
 	}
