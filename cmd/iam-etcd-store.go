@@ -626,6 +626,7 @@ func (ies *IAMEtcdStore) watch(ctx context.Context, sys *IAMSys) {
 					time.Sleep(1 * time.Second)
 					// Upon an error on watch channel
 					// re-init the watch channel.
+					logger.Info("watcher error")
 					goto outerLoop
 				}
 				if err := watchResp.Err(); err != nil {
@@ -634,6 +635,7 @@ func (ies *IAMEtcdStore) watch(ctx context.Context, sys *IAMSys) {
 					time.Sleep(1 * time.Second)
 					// Upon an error on watch channel
 					// re-init the watch channel.
+					logger.Info("watcher error : %s", err.Error())
 					goto outerLoop
 				}
 				for _, event := range watchResp.Events {
