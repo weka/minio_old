@@ -116,6 +116,8 @@ func (ies *IAMEtcdStore) saveIAMConfig(ctx context.Context, item interface{}, pa
 func (ies *IAMEtcdStore) loadIAMConfig(ctx context.Context, item interface{}, path string) error {
 	pdata, err := readKeyEtcd(ctx, ies.client, path)
 	if err != nil {
+		logger.Info("loadIAMConfig : failed to load %s", path)
+		logger.LogIf(ctx, err)
 		return err
 	}
 
@@ -295,6 +297,7 @@ func (ies *IAMEtcdStore) loadUser(ctx context.Context, user string, userType IAM
 	err := ies.loadIAMConfig(ctx, &u, getUserIdentityPath(user, userType))
 	if err != nil {
 		if err == errConfigNotFound {
+			logger.Info("cannot find user : %s", user)
 			return errNoSuchUser
 		}
 		return err
@@ -302,6 +305,7 @@ func (ies *IAMEtcdStore) loadUser(ctx context.Context, user string, userType IAM
 
 	if u.Credentials.IsExpired() {
 		// Delete expired identity.
+		logger.Info("user credentials expired : %s", user)
 		deleteKeyEtcd(ctx, ies.client, getUserIdentityPath(user, userType))
 		deleteKeyEtcd(ctx, ies.client, getMappedPolicyPath(user, userType, false))
 		return nil
@@ -351,6 +355,7 @@ func (ies *IAMEtcdStore) loadUsers(ctx context.Context, userType IAMUserType, m 
 
 	r, err := ies.client.Get(cctx, basePrefix, etcd.WithPrefix(), etcd.WithKeysOnly())
 	if err != nil {
+		logger.Info("failed to load users : %s", err.Error())
 		return err
 	}
 

@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/minio/minio/cmd/logger"
 
 	etcd "go.etcd.io/etcd/clientv3"
 )
@@ -75,6 +76,8 @@ func readKeyEtcd(ctx context.Context, client *etcd.Client, key string) ([]byte, 
 		return nil, etcdErrToErr(err, client.Endpoints())
 	}
 	if resp.Count == 0 {
+		logger.Info("readKeyEtcd : failed to Get %s", key)
+		logger.LogIf(ctx, err)
 		return nil, errConfigNotFound
 	}
 	for _, ev := range resp.Kvs {
@@ -82,5 +85,8 @@ func readKeyEtcd(ctx context.Context, client *etcd.Client, key string) ([]byte, 
 			return ev.Value, nil
 		}
 	}
+
+	logger.Info("readKeyEtcd : failed to Get %s", key)
+	logger.LogIf(ctx, err)
 	return nil, errConfigNotFound
 }
