@@ -1105,7 +1105,7 @@ func (api objectAPIHandlers) DeleteBucketHandler(w http.ResponseWriter, r *http.
 
 	// Attempt to delete bucket.
 	if err := deleteBucket(ctx, bucket, forceDelete, unlinkBucket); err != nil {
-		if _, ok := err.(BucketNotEmpty); ok && (globalBucketVersioningSys.Enabled(bucket) || globalBucketVersioningSys.Suspended(bucket)) {
+		if _, ok := err.(BucketNotEmpty); ok {
 			apiErr := toAPIError(ctx, err)
 			apiErr.Description = "The bucket you tried to delete is not empty. You must delete all versions in the bucket."
 			writeErrorResponse(ctx, w, apiErr, r.URL, guessIsBrowserReq(r))
