@@ -60,6 +60,7 @@ type BucketOptions struct {
 	LockEnabled       bool
 	VersioningEnabled bool
 	ExistingPath	  string
+	Filesystem		  string
 }
 
 // LockType represents required locking for ObjectLayer operations
