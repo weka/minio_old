@@ -641,7 +641,7 @@ func (fs *FSObjects) DeleteBucket(ctx context.Context, bucket string, forceDelet
 		// get the real bucket directory - which is the directory the symlink point to
 		symlink := bucketDir
 		if bucketDir, err = os.Readlink(bucketDir); err != nil {
-			return toObjectErr(err, bucket)
+			return toObjectErr(BucketNotFound{Bucket: bucket}, bucket)
 		}
 
 		bucketEmpty, err := fs.isBucketEmpty(bucketDir)
