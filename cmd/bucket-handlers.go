@@ -634,6 +634,15 @@ func (api objectAPIHandlers) PutBucketHandler(w http.ResponseWriter, r *http.Req
 		existingPath = existingHeaderParamValues[0]
 	}
 
+	filesystem := globalDefaultFilesystemPath
+
+	if existingHeaderParamValues, found := r.Header[http.CanonicalHeaderKey("x-weka-fs")]; found {
+		if err := authenticatelLocalWekaAcces(r); err != ErrNone {
+			writeErrorResponse(ctx, w, errorCodes.ToAPIErr(err), r.URL, guessIsBrowserReq(r))
+		}
+		filesystem = existingHeaderParamValues[0]
+	}
+
 	if s3Error := checkRequestAuthType(ctx, r, policy.CreateBucketAction, bucket, ""); s3Error != ErrNone {
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(s3Error), r.URL, guessIsBrowserReq(r))
 		return
@@ -657,6 +666,7 @@ func (api objectAPIHandlers) PutBucketHandler(w http.ResponseWriter, r *http.Req
 		Location:    location,
 		LockEnabled: objectLockEnabled,
 		ExistingPath: existingPath,
+		Filesystem: filesystem,
 	}
 
 	if globalDNSConfig != nil {
