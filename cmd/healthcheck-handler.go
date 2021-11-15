@@ -69,6 +69,8 @@ func ReadinessCheckHandler(w http.ResponseWriter, r *http.Request) {
 	if shouldProxy() {
 		// Service not initialized yet
 		w.Header().Set(xhttp.MinIOServerStatus, unavailable)
+		writeResponse(w, http.StatusServiceUnavailable, nil, mimeNone)
+		return
 	}
 
 	writeResponse(w, http.StatusOK, nil, mimeNone)
@@ -79,6 +81,8 @@ func LivenessCheckHandler(w http.ResponseWriter, r *http.Request) {
 	if shouldProxy() {
 		// Service not initialized yet
 		w.Header().Set(xhttp.MinIOServerStatus, unavailable)
+		writeResponse(w, http.StatusServiceUnavailable, nil, mimeNone)
+		return
 	}
 	writeResponse(w, http.StatusOK, nil, mimeNone)
 }
